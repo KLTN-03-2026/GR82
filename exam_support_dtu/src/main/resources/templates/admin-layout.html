@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:fragment="admin_layout(dynamicContent, customCss)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - DTU Crawler</title>
+
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <th:block th:if="${customCss}">
+        <link rel="stylesheet" th:href="@{${customCss}}">
+    </th:block>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-wrapper" style="display: flex; gap: 12px; align-items: center;">
+                <div class="brand-logo">
+                    <span class="dtu-text">DTU</span>
+                </div>
+                <div class="brand-info">
+                    <h1>Admin Portal</h1>
+                    <span>SYSTEM CONTROLLER</span>
+                </div>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a th:href="@{/admin/dashboard}"><i class="fa-solid fa-border-all"></i> Dashboard</a></li>
+            <li><a href="#"><i class="fa-regular fa-folder-open"></i> Quản lý File</a></li>
+            <li><a th:href="@{/admin/schedule}"><i class="fa-regular fa-calendar-alt"></i> Lịch thi</a></li>
+            <li><a href="#"><i class="fa-solid fa-users"></i> Sinh viên</a></li>
+            <li><a href="#"><i class="fa-solid fa-gear"></i> Cấu hình</a></li>
+        </ul>
+        <div class="system-status">
+            <span class="dot green"></span> Engine Running
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="top-header">
+            <div class="header-left">
+                <h3>DTU Crawler</h3>
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Tìm kiếm dữ liệu...">
+                </div>
+            </div>
+            <div class="header-right">
+                <i class="fa-regular fa-bell icon-btn"></i>
+                <i class="fa-solid fa-gear icon-btn"></i>
+                <div class="user-profile">
+                    <span class="user-name">Admin User<br><small>Super Admin</small></span>
+                    <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                </div>
+                <button class="btn-primary" onclick="startCrawl()">Cào dữ liệu ngay</button>
+            </div>
+        </header>
+
+        <div th:replace="${dynamicContent}"></div>
+
+    </main>
+</div>
+
+<div class="fab-container">
+    <button class="fab-btn"><i class="fa-solid fa-bolt"></i></button>
+</div>
+
+<script>
+    function startCrawl() {
+        alert('Đang khởi động tiến trình cào dữ liệu...');
+        fetch('/api/crawl/pages?total=5')
+            .then(response => response.text())
+            .then(data => {
+                alert('Hoàn tất:\n' + data);
+                location.reload();
+            })
+            .catch(error => alert('Lỗi: ' + error));
+    }
+</script>
+</body>
+</html>

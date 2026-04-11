@@ -1,0 +1,162 @@
+package com.example.exam_support_dtu.controller;
+
+import com.example.exam_support_dtu.dto.RoomDto;
+import com.example.exam_support_dtu.dto.ScheduleDto;
+import com.example.exam_support_dtu.entity.ExamRoom;
+import com.example.exam_support_dtu.entity.ExamSchedule;
+import com.example.exam_support_dtu.repository.ExamRoomRepository;
+import com.example.exam_support_dtu.repository.ExamScheduleRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/admin/schedules")
+public class AdminScheduleController {
+    private final ExamScheduleRepository examScheduleRepository;
+    private final ExamRoomRepository examRoomRepository;
+    public AdminScheduleController(ExamScheduleRepository examScheduleRepository, ExamRoomRepository examRoomRepository) {
+        this.examScheduleRepository = examScheduleRepository;
+        this.examRoomRepository = examRoomRepository;
+    }
+
+
+    // ==========================================
+    // 1. READ (XEM CHI TIẾT)
+    // ==========================================
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ScheduleDto> getScheduleDetail(@PathVariable Long id) {
+        //Tìm lịch thi trong db
+        Optional<ExamSchedule> optionalSchedule  = examScheduleRepository.findById(id);
+
+        //kiểm tra căn bản: nếu k tìm thấy thì trả về lỗi 404
+        if(optionalSchedule.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        //Lấy đối tượng ra optional
+        ExamSchedule schedule = optionalSchedule.get();
+
+        //tạo 1 danh sách rỗng để chứa DTO của phòng thi
+        List<RoomDto> roomDtoList = new ArrayList<>();
+
+        //Duyệt qua từng phòng thi
+        if(schedule.getRooms() != null) {
+            for(ExamRoom examRoom : schedule.getRooms()) {
+                //Đóng gói từng phòng vào DTO
+                RoomDto roomDto = new RoomDto(
+                        examRoom.getId(),
+                        examRoom.getRoomName(),
+                        examRoom.getLocation(),
+                        examRoom.getExamDate(),
+                        examRoom.getExamTime(),
+                        examRoom.getCapacity()
+                );
+                roomDtoList.add(roomDto);
+            }
+        }
+
+        //Đóng gói tất cả vào ScheduleDto tổng
+        ScheduleDto scheduleDto = new ScheduleDto(
+                schedule.getId(),
+                schedule.getCourseCode(),
+                schedule.getCourseName(),
+                schedule.getCredit(),
+                schedule.getSemester(),
+                schedule.getAttempt(),
+                schedule.getTotalStudents(),
+                schedule.getNotes(),
+                roomDtoList
+        );
+        return ResponseEntity.ok(scheduleDto);
+    }
+
+
+    // ==========================================
+    // 2. UPDATE (CẬP NHẬT)
+    // ==========================================
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<?> updateSchedule(@PathVariable Long id,
+                                            @RequestBody ScheduleDto scheduleDto) {
+        try {
+            // 1. Kiểm tra Lịch thi có tồn tại không
+            Optional<ExamSchedule> optionalSchedule = examScheduleRepository.findById(id);
+            if(optionalSchedule.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            //Tồn tại thi lấy ra
+            ExamSchedule schedule = optionalSchedule.get();
+
+
+
+            //2. Cập nhật thông tin gốc
+            schedule.setCourseCode(scheduleDto.getCourseCode());
+            schedule.setCourseName(scheduleDto.getCourseName());
+            schedule.setCredit(scheduleDto.getCredit());
+            schedule.setSemester(scheduleDto.getSemester());
+            schedule.setAttempt(scheduleDto.getAttempt());
+            schedule.setTotalStudents(scheduleDto.getTotalStudents());
+            schedule.setNotes(scheduleDto.getNotes());
+
+            examScheduleRepository.save(schedule);
+
+            //3. cập nhật phòng thi (xóa cũ thêm mới)
+            examRoomRepository.deleteByExamScheduleId(schedule.getId());
+
+            //Duyệt danh sách từ DTO
+            if(scheduleDto.getRooms() != null) {
+                for(RoomDto roomDto : scheduleDto.getRooms()) {
+                    ExamRoom examRoom = new ExamRoom();
+
+                    examRoom.setRoomName(roomDto.getRoomName());
+                    examRoom.setLocation(roomDto.getLocation());
+                    examRoom.setExamDate(roomDto.getExamDate());
+                    examRoom.setExamTime(roomDto.getExamTime());
+                    examRoom.setCapacity(roomDto.getCapacity());
+
+                    // Set khóa ngoại
+                    examRoom.setExamSchedule(schedule);
+                    examRoomRepository.save(examRoom);
+                }
+            }
+            return ResponseEntity.ok().body("{\"message\": \"Cập nhật thành công!\"}");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // ==========================================
+    // 3. DELETE (XÓA)
+    // ==========================================
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteSchedule(@PathVariable Long id) {
+        if(!examScheduleRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // xóa con trước cha sau
+        examRoomRepository.deleteByExamScheduleId(id);
+        examScheduleRepository.deleteById(id);
+
+        return ResponseEntity.ok().body("{\"message\": \"Xóa thành công!\"}");
+    }
+
+
+
+    // Class giả lập dữ liệu (Data Transfer Object)
+    public record SubjectDto(String code, String name, int credits, String semester) {}
+}
