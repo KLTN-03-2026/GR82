@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html th:replace="~{admin-layout :: admin_layout(~{::#dashboard-content}, null)}" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div id="dashboard-content">
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-title"><span>FILE MỚI CÀO</span> <i class="fa-regular fa-file-lines text-red"></i></div>
+            <div class="stat-value" th:text="${totalFiles}">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title"><span>LỊCH THI ĐÃ ĐỒNG BỘ</span> <i class="fa-solid fa-rotate text-red"></i></div>
+            <div class="stat-value"><span th:text="${syncRate}">0</span>%</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title"><span>SV QUAN TÂM</span> <i class="fa-solid fa-user-group text-red"></i></div>
+            <div class="stat-value" th:text="${#numbers.formatInteger(totalStudents, 1, 'COMMA')}">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title"><span>MAIL ĐÃ GỬI</span> <i class="fa-regular fa-envelope text-red"></i></div>
+            <div class="stat-value" th:text="${#numbers.formatInteger(totalMails, 1, 'COMMA')}">0</div>
+        </div>
+    </div>
+
+    <div class="content-layout">
+
+        <div class="table-container">
+            <div class="table-header">
+                <h4>Tiến trình cào dữ liệu</h4>
+                <a href="#" class="view-all">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th width="5%">STT</th>
+                        <th width="45%">FILE NAME</th>
+                        <th width="20%">SOURCE LINK</th>
+                        <th width="15%">STATUS</th>
+                        <th width="15%">TIME</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="file, iterStat : ${filePage.content}">
+                        <td th:text="${(filePage.number * filePage.size) + iterStat.count}" style="font-weight: 600; color: #64748b;">1</td>
+                        <td>
+                            <div class="file-name-wrapper">
+                                <i th:if="${file.fileType != null and (file.fileType.name() == 'xls' or file.fileType.name() == 'xlsx')}" class="fa-regular fa-file-excel file-icon-excel"></i>
+                                <i th:if="${file.fileType != null and file.fileType.name() == 'pdf'}" class="fa-regular fa-file-pdf file-icon-pdf"></i>
+                                <i th:if="${file.fileType == null or file.fileType.name() == 'other'}" class="fa-regular fa-file file-icon-default"></i>
+                                <span class="file-name" th:text="${file.fileOriginalName != null ? file.fileOriginalName : 'Không xác định'}">TenFile.xlsx</span>
+                            </div>
+                        </td>
+                        <td>
+                            <a th:href="${file.fileUrl}" target="_blank" class="source-link">
+                                <span th:text="${#strings.length(file.fileUrl) > 20 ? #strings.substring(file.fileUrl, 8, 20) + '...' : file.fileUrl}">pdaotao...</span>
+                                <i class="fa-regular fa-copy"></i>
+                            </a>
+                        </td>
+                        <td>
+                            <span th:if="${file.status != null and file.status.name() == 'parsed'}" class="badge badge-success">PARSED</span>
+                            <span th:if="${file.status != null and file.status.name() == 'downloaded'}" class="badge badge-success">DOWNLOADED</span>
+                            <span th:if="${file.status != null and file.status.name() == 'pending'}" class="badge badge-warning">WAITING</span>
+                            <span th:if="${file.status != null and file.status.name() == 'error'}" class="badge badge-danger" th:title="${file.note}">ERROR</span>
+                        </td>
+                        <td th:text="${file.foundAt != null ? #temporals.format(file.foundAt, 'dd/MM/yyyy HH:mm') : 'N/A'}" style="color: #64748b; font-size: 13px;"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(filePage.content)}">
+                        <td colspan="5" style="text-align: center; padding: 20px;">Chưa có dữ liệu.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" th:if="${filePage.totalPages > 0}">
+                    <span class="page-info">
+                        Showing <span th:text="${filePage.number * filePage.size + 1}"></span>
+                        to <span th:text="${(filePage.number + 1) * filePage.size > filePage.totalElements ? filePage.totalElements : (filePage.number + 1) * filePage.size}"></span>
+                        of <span th:text="${filePage.totalElements}">0</span> entries
+                    </span>
+
+                <div class="page-controls">
+                    <a th:href="@{/admin/dashboard(page=0)}" th:classappend="${filePage.first} ? 'disabled' : ''" class="page-btn"><i class="fa-solid fa-angles-left"></i></a>
+
+                    <th:block th:if="${filePage.totalPages <= 5}">
+                        <a th:each="i : ${#numbers.sequence(0, filePage.totalPages - 1)}" th:href="@{/admin/dashboard(page=${i})}" th:text="${i + 1}" th:classappend="${filePage.number == i} ? 'active' : ''" class="page-btn">1</a>
+                    </th:block>
+
+                    <th:block th:if="${filePage.totalPages > 5}">
+                        <th:block th:if="${filePage.number <= 2}">
+                            <a th:each="i : ${#numbers.sequence(0, 3)}" th:href="@{/admin/dashboard(page=${i})}" th:text="${i + 1}" th:classappend="${filePage.number == i} ? 'active' : ''" class="page-btn">1</a>
+                            <span class="page-dots">...</span>
+                            <a th:href="@{/admin/dashboard(page=${filePage.totalPages - 1})}" th:text="${filePage.totalPages}" class="page-btn">20</a>
+                        </th:block>
+
+                        <th:block th:if="${filePage.number > 2}">
+                            <a th:href="@{/admin/dashboard(page=0)}" class="page-btn">1</a>
+                            <span class="page-dots">...</span>
+                            <a th:if="${filePage.number < filePage.totalPages - 2}" th:each="i : ${#numbers.sequence(filePage.number - 1, filePage.number + 1)}" th:href="@{/admin/dashboard(page=${i})}" th:text="${i + 1}" th:classappend="${filePage.number == i} ? 'active' : ''" class="page-btn">5</a>
+                            <a th:if="${filePage.number >= filePage.totalPages - 2}" th:each="i : ${#numbers.sequence(filePage.totalPages - 3, filePage.totalPages - 1)}" th:href="@{/admin/dashboard(page=${i})}" th:text="${i + 1}" th:classappend="${filePage.number == i} ? 'active' : ''" class="page-btn">5</a>
+                            <th:block th:if="${filePage.number < filePage.totalPages - 2}">
+                                <span class="page-dots">...</span>
+                                <a th:href="@{/admin/dashboard(page=${filePage.totalPages - 1})}" th:text="${filePage.totalPages}" class="page-btn">20</a>
+                            </th:block>
+                        </th:block>
+                    </th:block>
+
+                    <a th:href="@{/admin/dashboard(page=${filePage.totalPages - 1})}" th:classappend="${filePage.last} ? 'disabled' : ''" class="page-btn"><i class="fa-solid fa-angles-right"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-sidebar">
+            <div class="activity-header">
+                <h4>Hoạt động gần đây</h4>
+                <span class="activity-badge">Mới</span>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-icon icon-success"><i class="fa-solid fa-check"></i></div>
+                    <div class="timeline-content">
+                        <h5>Đã cào thành công</h5>
+                        <p>Lịch thi Khoa CNTT - 1,200 records</p>
+                        <span class="time">10 PHÚT TRƯỚC</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon icon-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="timeline-content">
+                        <h5>Máy chủ phản hồi chậm</h5>
+                        <p>Nguồn: pdaotao.duytan.edu.vn (Timeout 5s)</p>
+                        <span class="time">45 PHÚT TRƯỚC</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon icon-info"><i class="fa-solid fa-gear"></i></div>
+                    <div class="timeline-content">
+                        <h5>Cập nhật cấu hình</h5>
+                        <p>Admin đã thay đổi CronJob scheduler</p>
+                        <span class="time">2 GIỜ TRƯỚC</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon icon-danger"><i class="fa-solid fa-xmark"></i></div>
+                    <div class="timeline-content">
+                        <h5>Thất bại đồng bộ Mail</h5>
+                        <p>Lỗi kết nối SMTP server (Port 587)</p>
+                        <span class="time">HÔM QUA</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-outline">Xem lịch sử chi tiết</button>
+        </div>
+
+    </div>
+</div> </body>
+</html>

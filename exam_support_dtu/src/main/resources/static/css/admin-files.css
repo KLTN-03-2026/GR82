@@ -1,0 +1,163 @@
+/* ==========================================================================
+   TRANG QUẢN LÝ FILE
+   ========================================================================== */
+.page-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.page-title h2 { font-size: 32px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+.text-subtitle { color: #64748b; font-size: 14px; font-weight: 500; }
+.header-actions { display: flex; gap: 12px; align-items: center; }
+
+/* Ô tìm kiếm */
+.table-search {
+    background: #ffffff; padding: 10px 16px; border-radius: 12px;
+    border: 1px solid #e2e8f0; display: flex; align-items: center;
+    width: 280px; transition: all 0.2s;
+}
+.table-search:focus-within { border-color: #b91c1c; box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1); }
+.table-search i { color: #94a3b8; font-size: 14px; }
+.table-search input {
+    border: none; outline: none; margin-left: 10px;
+    width: 100%; font-size: 14px; color: #334155; background: transparent;
+}
+.table-search input::placeholder { color: #94a3b8; font-weight: 500; }
+
+/* Bảng dữ liệu */
+.table-container {
+    background: #ffffff; border-radius: 20px; padding: 24px;
+    border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.01); width: 100%;
+}
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+    text-align: left; padding: 12px 16px; color: #94a3b8;
+    font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9;
+    text-transform: uppercase; letter-spacing: 1px;
+    position: sticky; top: 0; background-color: #ffffff; z-index: 10;
+}
+.data-table td { padding: 16px; border-bottom: 1px solid #f8fafc; font-size: 14px; color: #334155; vertical-align: middle; }
+.data-table tbody tr:hover td { background-color: #f8fafc; }
+
+/* Các thẻ CSS phụ trợ cho File */
+.fw-bold { font-weight: 700; } .text-gray { color: #94a3b8; } .text-muted { color: #64748b; }
+.date-stack { display: flex; flex-direction: column; font-size: 14px; color: #475569; font-weight: 500;}
+.date-stack small { font-size: 12px; color: #94a3b8; }
+
+/* Khối hiển thị Tên & Icon File */
+.file-item-info { display: flex; align-items: center; gap: 16px; }
+.file-icon-box {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 20px; flex-shrink: 0;
+}
+.icon-pdf { background: #fef2f2; color: #dc2626; }
+.icon-excel { background: #ecfdf5; color: #16a34a; }
+.icon-zip { background: #eff6ff; color: #0284c7; }
+.icon-img { background: #fff7ed; color: #ea580c; }
+
+.file-name-stack { display: flex; flex-direction: column; gap: 2px; }
+.file-main-name { font-size: 14px; font-weight: 700; color: #0f172a; transition: 0.2s; cursor: pointer; }
+.file-main-name:hover { color: #b91c1c; }
+.file-sub-type { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Nguồn Badge */
+.source-badge {
+    background: #f1f5f9; color: #475569;
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* Nút thao tác (Action Buttons) */
+.action-buttons { display: flex; justify-content: center; align-items: center; gap: 8px; }
+.btn-icon {
+    background: transparent; border: none; font-size: 16px; color: #94a3b8;
+    padding: 8px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+    display: inline-flex; justify-content: center; align-items: center;
+}
+.btn-icon:hover { background: #f1f5f9; }
+.btn-download:hover { color: #16a34a; background: #ecfdf5; }
+.btn-detail:hover { color: #0284c7; background: #eff6ff; }
+.btn-delete:hover { color: #dc2626; background: #fef2f2; }
+
+/* ==========================================================================
+    MODAL CHI TIẾT FILE
+   ========================================================================== */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+    z-index: 1000; display: none; justify-content: center; align-items: center;
+}
+.modal-overlay.active { display: flex; }
+
+.modal-box {
+    background: #ffffff; max-height: 90vh; border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    display: flex; flex-direction: column;
+    transform: scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.modal-overlay.active .modal-box { transform: scale(1); opacity: 1; }
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; }
+.close-modal {
+    width: 36px; height: 36px; border-radius: 50%; background: #f8fafc;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 18px; color: #64748b; cursor: pointer; transition: 0.2s;
+}
+.close-modal:hover { background: #fef2f2; color: #b91c1c; }
+
+/* Tên file nổi bật */
+.file-name-highlight {
+    background: #f8fafc; padding: 20px 24px; border-radius: 16px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 28px;
+}
+.file-name-highlight span { font-size: 18px; font-weight: 700; color: #0f172a; word-break: break-all; }
+
+/* Grid chia cột Modal DB */
+.file-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.file-info-grid .full-width { grid-column: span 2; }
+.file-info-grid label {
+    font-size: 10px; font-weight: 800; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;
+}
+.file-info-grid p { font-size: 15px; font-weight: 600; color: #0f172a; margin: 0;}
+.mono-text { font-family: monospace; color: #334155; }
+
+/* Khung Code (Path, Checksum) */
+.code-box {
+    background: #f8fafc; padding: 14px 16px; border-radius: 12px;
+    font-family: monospace; font-size: 12px; color: #475569;
+    word-break: break-all; border: 1px solid #e2e8f0;
+}
+.flex-between { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.flex-between i { color: #94a3b8; font-size: 16px; transition: 0.2s; }
+.flex-between i:hover { color: #b91c1c; }
+.truncate { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+
+/* Nút Footer */
+.modal-footer { display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 24px 24px; }
+.btn-outline-gray {
+    border: 1px solid #e2e8f0; color: #475569; background: #ffffff;
+    padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;
+}
+.btn-outline-gray:hover { background: #f8fafc; color: #0f172a; }
+
+/* CSS cho Tabs Phòng thi */
+.room-tab {
+    padding: 8px 16px; background: #f1f5f9; color: #475569;
+    border: 1px solid #cbd5e1; border-radius: 20px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: 0.2s;
+}
+.room-tab:hover { background: #e2e8f0; }
+.room-tab.active {
+    background: #b91c1c; color: #ffffff; border-color: #b91c1c;
+}
+/* Cuộn ngang thanh tab nếu quá nhiều phòng */
+#room-tabs-container::-webkit-scrollbar { height: 6px; }
+#room-tabs-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+/* Nút Chi tiết (Copy chuẩn từ trang Lịch thi) */
+.btn-room-detail {
+    position: absolute; bottom: 16px; right: 20px;
+    background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
+}
+.btn-room-detail:hover { background: #b91c1c; color: #ffffff; border-color: #b91c1c; }
