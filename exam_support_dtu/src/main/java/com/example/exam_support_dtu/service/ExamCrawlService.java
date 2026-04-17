@@ -314,9 +314,102 @@ public class ExamCrawlService {
         }
     }
 
-    // Các hàm encodePath, sanitizeFileName, GetFileExtension, extractFileName giữ nguyên 100%
-    private String encodePath(String path) { /* ... */ return path; } // Bạn copy code cũ vào đây
-    private String sanitizeFileName(String name) { /* ... */ return name; } // Copy code cũ
-    public String GetFileExtension(String fileName){ /* ... */ return "xls"; } // Copy code cũ
-    private String extractFileName(String fileUrl) { /* ... */ return "file"; } // Copy code cũ
+    // =========================================================================
+    // 4 CÁC HÀM HỖ TRỢ ĐÃ ĐƯỢC CHUẨN HÓA THEO DATABASE VÀ ENUM
+    // =========================================================================
+
+    // 1. Mã hóa đường dẫn (Fix triệt để lỗi 400 và 404 bằng vòng lặp cơ bản)
+    private String encodePath(String path) {
+        if (path == null) return "";
+        StringBuilder encoded = new StringBuilder();
+
+        // Duyệt qua từng ký tự trong chuỗi đường dẫn
+        for (char c : path.toCharArray()) {
+            if (c == ' ') {
+                encoded.append("%20"); // Xử lý khoảng trắng thủ công
+            } else if (c > 127) {
+                // Nếu là ký tự tiếng Việt (mã ASCII > 127), dùng URLEncoder cơ bản để mã hóa TỪNG ký tự
+                try {
+                    encoded.append(java.net.URLEncoder.encode(String.valueOf(c), StandardCharsets.UTF_8.name()));
+                } catch (Exception e) {
+                    encoded.append(c);
+                }
+            } else {
+                // Các ký tự bình thường (như '/', 'a', 'b', '1') thì giữ nguyên
+                encoded.append(c);
+            }
+        }
+        return encoded.toString();
+    }
+
+    // 2. Làm sạch tên file bằng chuỗi và Regex căn bản
+    private String sanitizeFileName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "unknown_file_" + System.currentTimeMillis();
+        }
+
+        // Gom các ký tự cấm, khoảng trắng, dấu phẩy dính liền nhau thành 1 dấu '_'
+        String sanitized = name.replaceAll("[\\\\/:*?\"<>|\\s,]+", "_");
+
+        // Logic cơ bản: Cắt bỏ dấu '_' ở đầu và cuối chuỗi nếu có
+        if (sanitized.startsWith("_")) {
+            sanitized = sanitized.substring(1);
+        }
+        if (sanitized.endsWith("_")) {
+            sanitized = sanitized.substring(0, sanitized.length() - 1);
+        }
+
+        return sanitized;
+    }
+
+    // 3. Trích xuất đuôi file bằng các hàm String truyền thống
+    public String GetFileExtension(String fileName) {
+        if (fileName == null) return "other";
+
+        // Tìm vị trí dấu chấm cuối cùng
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex == -1 || dotIndex == fileName.length() - 1) {
+            return "other"; // Không có dấu chấm hoặc dấu chấm nằm ở cuối cùng
+        }
+
+        // Cắt lấy phần đuôi và viết thường
+        String ext = fileName.substring(dotIndex + 1).toLowerCase();
+
+        // Xử lý thủ công nếu đuôi dính tham số (VD: xls?version=1)
+        int questionMarkIndex = ext.indexOf('?');
+        if (questionMarkIndex != -1) {
+            ext = ext.substring(0, questionMarkIndex); // Cắt bỏ phần từ dấu '?' trở đi
+        }
+
+        // So sánh chuỗi cơ bản với Enum
+        if (ext.equals("xls") || ext.equals("xlsx") || ext.equals("pdf")) {
+            return ext;
+        }
+        return "other";
+    }
+
+    // 4. Trích xuất tên file từ URL bằng java.net.URL nguyên bản
+    private String extractFileName(String fileUrl) {
+        try {
+            // Dùng class URL cổ điển của Java
+            java.net.URL url = new java.net.URL(fileUrl);
+            String path = url.getPath(); // getPath() tự động vứt bỏ phần rác ?id=... phía sau
+
+            if (path == null || path.isEmpty()) {
+                return "file_" + System.currentTimeMillis();
+            }
+
+            // Tìm dấu gạch chéo cuối cùng để lấy tên file
+            int lastSlashIndex = path.lastIndexOf('/');
+            String rawFileName = path;
+            if (lastSlashIndex != -1) {
+                rawFileName = path.substring(lastSlashIndex + 1);
+            }
+
+            // Dịch ngược %20 thành khoảng trắng bằng công cụ cơ bản
+            return java.net.URLDecoder.decode(rawFileName, StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            return "file_error_" + System.currentTimeMillis();
+        }
+    }
 }

@@ -20,8 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/admin/schedules")
+@Controller
 public class AdminScheduleController {
     private final ExamScheduleRepository examScheduleRepository;
     private final ExamRoomRepository examRoomRepository;
@@ -30,12 +29,37 @@ public class AdminScheduleController {
         this.examRoomRepository = examRoomRepository;
     }
 
+    // =========================================================
+    // PHẦN 1: TRẢ VỀ GIAO DIỆN THYMELEAF (Không có @ResponseBody)
+    // =========================================================
+
+    @GetMapping("/admin/schedules")
+    public String showSchedulePage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+
+        // Tạo Pageable để phân trang (sắp xếp ID giảm dần cho mới nhất lên đầu)
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+
+        // Lấy dữ liệu phân trang từ DB
+        Page<ExamSchedule> schedulePage = examScheduleRepository.findAll(pageable);
+
+        // Đẩy biến "schedulePage" sang cho file HTML Thymeleaf đọc
+        model.addAttribute("schedulePage", schedulePage);
+
+        // Trả về tên file HTML
+        return "admin-schedules";
+    }
+
+
 
     // ==========================================
-    // 1. READ (XEM CHI TIẾT)
+    // 2. READ (XEM CHI TIẾT)
     // ==========================================
 
-    @GetMapping("/{id}")
+    @GetMapping("/api/admin/schedules/{id}")
+    @ResponseBody //Báo cho Spring biết hàm này trả JSON
     public ResponseEntity<ScheduleDto> getScheduleDetail(@PathVariable Long id) {
         //Tìm lịch thi trong db
         Optional<ExamSchedule> optionalSchedule  = examScheduleRepository.findById(id);
@@ -84,25 +108,23 @@ public class AdminScheduleController {
 
 
     // ==========================================
-    // 2. UPDATE (CẬP NHẬT)
+    // 3. UPDATE (CẬP NHẬT)
     // ==========================================
-    @PutMapping("/{id}")
+    @PutMapping("/api/admin/schedules/{id}")
+    @ResponseBody
     @Transactional
     public ResponseEntity<?> updateSchedule(@PathVariable Long id,
                                             @RequestBody ScheduleDto scheduleDto) {
         try {
             // 1. Kiểm tra Lịch thi có tồn tại không
             Optional<ExamSchedule> optionalSchedule = examScheduleRepository.findById(id);
-            if(optionalSchedule.isEmpty()) {
+            if (optionalSchedule.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
-            //Tồn tại thi lấy ra
             ExamSchedule schedule = optionalSchedule.get();
 
-
-
-            //2. Cập nhật thông tin gốc
+            // 2. Cập nhật thông tin gốc của Lịch thi
             schedule.setCourseCode(scheduleDto.getCourseCode());
             schedule.setCourseName(scheduleDto.getCourseName());
             schedule.setCredit(scheduleDto.getCredit());
@@ -113,25 +135,33 @@ public class AdminScheduleController {
 
             examScheduleRepository.save(schedule);
 
-            //3. cập nhật phòng thi (xóa cũ thêm mới)
-            examRoomRepository.deleteByExamScheduleId(schedule.getId());
+            // ========================================================
+            // 3. CẬP NHẬT THÔNG TIN PHÒNG THI
+            // ========================================================
+            if (scheduleDto.getRooms() != null) {
+                for (RoomDto roomDto : scheduleDto.getRooms()) {
 
-            //Duyệt danh sách từ DTO
-            if(scheduleDto.getRooms() != null) {
-                for(RoomDto roomDto : scheduleDto.getRooms()) {
-                    ExamRoom examRoom = new ExamRoom();
+                    // Chỉ xử lý những phòng thi có ID (nghĩa là đã tồn tại trong DB)
+                    if (roomDto.getId() != null) {
+                        Optional<ExamRoom> optRoom = examRoomRepository.findById(roomDto.getId());
 
-                    examRoom.setRoomName(roomDto.getRoomName());
-                    examRoom.setLocation(roomDto.getLocation());
-                    examRoom.setExamDate(roomDto.getExamDate());
-                    examRoom.setExamTime(roomDto.getExamTime());
-                    examRoom.setCapacity(roomDto.getCapacity());
+                        if (optRoom.isPresent()) {
+                            ExamRoom existingRoom = optRoom.get();
 
-                    // Set khóa ngoại
-                    examRoom.setExamSchedule(schedule);
-                    examRoomRepository.save(examRoom);
+                            // Cập nhật thông tin phòng thi
+                            existingRoom.setRoomName(roomDto.getRoomName());
+                            existingRoom.setLocation(roomDto.getLocation());
+                            existingRoom.setExamDate(roomDto.getExamDate());
+                            existingRoom.setExamTime(roomDto.getExamTime());
+                            existingRoom.setCapacity(roomDto.getCapacity());
+
+                            // Lưu lại -> Hibernate sẽ chạy lệnh UPDATE vì existingRoom đã có ID
+                            examRoomRepository.save(existingRoom);
+                        }
+                    }
                 }
             }
+
             return ResponseEntity.ok().body("{\"message\": \"Cập nhật thành công!\"}");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
@@ -139,9 +169,10 @@ public class AdminScheduleController {
     }
 
     // ==========================================
-    // 3. DELETE (XÓA)
+    // 4. DELETE (XÓA)
     // ==========================================
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/api/admin/schedules/{id}")
+    @ResponseBody
     @Transactional
     public ResponseEntity<?> deleteSchedule(@PathVariable Long id) {
         if(!examScheduleRepository.existsById(id)) {
@@ -155,8 +186,33 @@ public class AdminScheduleController {
         return ResponseEntity.ok().body("{\"message\": \"Xóa thành công!\"}");
     }
 
+    // ==========================================
+    // 5. LẤY DANH SÁCH SINH VIÊN THEO PHÒNG THI
+    // ==========================================
+    @GetMapping("/api/admin/rooms/{roomId}/students")
+    @ResponseBody
+    public ResponseEntity<?> getStudentsByRoom(@PathVariable Long roomId) {
+        Optional<ExamRoom>  optionalExamRoom = examRoomRepository.findById(roomId);
+        if(optionalExamRoom.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
+        //lấy ra
+        ExamRoom examRoom = optionalExamRoom.get();
 
-    // Class giả lập dữ liệu (Data Transfer Object)
-    public record SubjectDto(String code, String name, int credits, String semester) {}
+        List<Object> studentList = new ArrayList<>();
+        if(examRoom.getStudents() != null) {
+            examRoom.getStudents().forEach(st -> {
+                // Tạo DTO ẩn danh để tránh lỗi đệ quy JSON
+                studentList.add(new Object() {
+                    public final String studentCode = st.getStudentCode();
+                    public final String fullName = st.getLastName() + " " + st.getFirstName();
+                    public final String studentClass = st.getStudentClass();
+                    public final String seatNumber = st.getSeatNumber();
+                });
+            });
+        }
+        return ResponseEntity.ok(studentList);
+    }
+
 }
