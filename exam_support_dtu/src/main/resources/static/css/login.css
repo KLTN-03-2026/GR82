@@ -1,0 +1,110 @@
+:root {
+    --dtu-red: #DA251C;
+    --white: #ffffff;
+    --gray: #f8f9fa;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: var(--gray);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-card {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.logo {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--dtu-red);
+    margin-bottom: 5px;
+    letter-spacing: -1px;
+}
+
+.subtitle {
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.error-msg {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+}
+
+/* Class mới được tách ra từ style inline của bạn */
+.success-msg {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #444;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    box-sizing: border-box;
+    outline: none;
+    transition: 0.3s;
+}
+
+.input-group input:focus {
+    border-color: var(--dtu-red);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--dtu-red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    background-color: #b01e16;
+    transform: translateY(-1px);
+}
+
+.footer-text {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #888;
+}

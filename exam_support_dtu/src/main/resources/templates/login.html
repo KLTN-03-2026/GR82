@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Duy Tân Exam Support</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+
+<div class="login-card">
+    <div class="logo">DUY TÂN</div>
+    <div class="subtitle">Hệ thống hỗ trợ thi cử</div>
+
+    <div th:if="${param.error}" class="error-msg">
+        Email hoặc mật khẩu không chính xác!
+    </div>
+
+    <div th:if="${param.success}" class="success-msg" th:text="${param.success}"></div>
+
+    <form th:action="@{/perform_login}" method="POST">
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="username@dtu.edu.vn" required autofocus>
+        </div>
+
+        <div class="input-group">
+            <label>Mật khẩu</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-login">ĐĂNG NHẬP</button>
+    </form>
+
+    <div class="footer-text">
+        Chưa có tài khoản? <a href="/register">Đăng ký tại đây</a>
+        <br><br>
+        © 2026 Đại học Duy Tân - Exam Support Team
+    </div>
+</div>
+
+</body>
+</html>
