@@ -20,7 +20,9 @@ public class SecurityConfig {
                         .anyRequest().permitAll() // cho phép tất cả request
                 )
                 .formLogin(form -> form.disable())  // tắt form login mặc định
-                .httpBasic(basic -> basic.disable()); // tắt HTTP basic
+                .httpBasic(basic -> basic.disable()) // tắt HTTP basic
+                // CHO PHÉP XEM PDF TRONG IFRAME
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
     }

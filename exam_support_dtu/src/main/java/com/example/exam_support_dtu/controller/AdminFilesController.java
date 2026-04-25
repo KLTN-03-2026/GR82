@@ -19,6 +19,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +46,7 @@ public class AdminFilesController {
             Model model) {
 
         // Sắp xếp file mới nhất lên đầu bảng
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
         Page<Files> filePage = filesRepository.findAll(pageable);
 
         model.addAttribute("filePage", filePage);
@@ -77,16 +79,26 @@ public class AdminFilesController {
         Files dbFile = fileOptional.get();
         File physicalFile = new File(dbFile.getFilePath());
 
-        // Nếu file vật lý trên ổ cứng đã bị xóa mất
         if (!physicalFile.exists()) {
             return ResponseEntity.notFound().build();
         }
 
         Resource resource = new FileSystemResource(physicalFile);
 
-        // Báo cho trình duyệt biết đây là file đính kèm để ép tải xuống
+        // 1. XỬ LÝ FALLBACK TÊN FILE (Nếu original_name bị null)
+        String fileName = dbFile.getOriginalName();
+        if (fileName == null || fileName.trim().isEmpty()) {
+            // Lấy đuôi file từ Enum (nếu có)
+            String ext = (dbFile.getExtension() != null) ? dbFile.getExtension().name().toLowerCase() : "bin";
+            fileName = "tai_lieu_so_" + id + "." + ext;
+        }
+
+        // 2. MÃ HÓA TÊN FILE (Chống lỗi font tiếng Việt và dấu cách khi tải qua trình duyệt)
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+
+        // 3. Trả về Header chuẩn RFC 5987 để ép tải xuống với tên file chính xác
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dbFile.getOriginalName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .contentLength(physicalFile.length())
                 .body(resource);

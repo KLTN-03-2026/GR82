@@ -304,7 +304,61 @@ overflow: hidden; /* Cấm cuộn toàn trang */
 .btn-outline { width: 100%; background: transparent; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer; transition: 0.2s; }
 .btn-outline:hover { background: #f8fafc; color: #0f172a; }
 
-/* FLOAT ACTION BUTTON (Nút góc phải dưới Figma) */
-.fab-container { position: fixed; bottom: 30px; right: 30px; }
-.fab-btn { width: 56px; height: 56px; border-radius: 50%; background: #7f1d1d; color: #fff; border: none; font-size: 20px; box-shadow: 0 10px 15px -3px rgba(127, 29, 29, 0.4); cursor: pointer; transition: transform 0.2s; }
-.fab-btn:hover { transform: scale(1.05); }
+/* ==========================================================================
+   FLOAT ACTION BUTTON (TRỢ LÝ AI - ẨN/HIỆN )
+   ========================================================================== */
+.fab-container {
+    position: fixed;
+    bottom: 50px; /* Đẩy lên 50px để chắc chắn không đè lên thanh Phân trang */
+    right: 0;     /* Ép sát mép phải màn hình */
+    width: 60px;  /* Vùng đệm để người dùng dễ dàng rê chuột trúng */
+    height: 80px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 9999;
+}
+
+.fab-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #b91c1c, #7f1d1d); /* Đổ màu gradient cho xịn */
+    color: #fff;
+    border: none;
+    font-size: 24px;
+    box-shadow: -4px 4px 15px rgba(185, 28, 28, 0.3);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* 1. TRẠNG THÁI NGHỈ: Ẩn 35px ra ngoài rìa phải (chỉ để lộ 21px) */
+    transform: translateX(35px);
+
+    /* 2. CHUYỂN ĐỘNG: Hiệu ứng lò xo đàn hồi (bounce) siêu mượt */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Hiệu ứng nhịp thở nhẹ để biết AI đang hoạt động */
+    animation: ai-pulse 2s infinite;
+}
+
+/* 3. TRẠNG THÁI HOVER: Khi rê chuột vào vùng container */
+.fab-container:hover .fab-btn {
+    /* Bật ra toàn bộ và cách mép phải 16px */
+    transform: translateX(-16px);
+    /* Khi hover thì tắt nhịp thở để user tập trung bấm */
+    animation: none;
+}
+
+.fab-container:hover .fab-btn:hover {
+    transform: translateX(-16px) scale(1.08); /* Phình to ra một tí khi trỏ đúng vào nút */
+    box-shadow: -4px 8px 20px rgba(185, 28, 28, 0.5);
+}
+
+/* Hiệu ứng nhịp thở (Phát sáng nhẹ) */
+@keyframes ai-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(185, 28, 28, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0); }
+}
