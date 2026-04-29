@@ -12,5 +12,6 @@ import java.util.Optional;
 public interface ExamScheduleRepository extends JpaRepository<ExamSchedule, Long> {
     // Tìm lịch thi theo ID của file gốc
     Optional<ExamSchedule> findByExamOriginalId(Long examOriginalId);
+
     List<ExamSchedule> findByFileId(Long fileId);
 }

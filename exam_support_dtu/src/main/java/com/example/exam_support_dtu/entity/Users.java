@@ -8,13 +8,19 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import java.util.Collection;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Users {
+public class Users implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,7 +65,7 @@ public class Users {
     private OffsetDateTime lastLogin;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    private boolean isActive = false;
 
     // ==========================================
     // Tự động gán thời gian lúc mới tạo User
@@ -69,5 +75,45 @@ public class Users {
         if (this.createdAt == null) {
             this.createdAt = OffsetDateTime.now();
         }
+    }
+
+    // ==========================================
+    // CÁC HÀM BẮT BUỘC CỦA SPRING SECURITY (UserDetails)
+    // ==========================================
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Cấp quyền dựa trên Role trong DB (ví dụ: "student" -> "ROLE_STUDENT")
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.toUpperCase()));
+    }
+
+    @Override
+    public String getPassword() {
+        return this.passwordHash;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.isActive;
     }
 }

@@ -1,0 +1,118 @@
+:root {
+    --dtu-red: #DA251C;
+    --white: #ffffff;
+    --gray: #f8f9fa;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: var(--gray);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-card {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.logo {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--dtu-red);
+    margin-bottom: 5px;
+    letter-spacing: -1px;
+}
+
+.subtitle {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.error-msg {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+}
+
+.success-msg {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #444;
+    font-size: 0.9rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    box-sizing: border-box;
+    outline: none;
+    transition: 0.3s;
+}
+
+.input-group input:focus {
+    border-color: var(--dtu-red);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--dtu-red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 10px;
+}
+
+.btn-login:hover {
+    background-color: #b01e16;
+}
+
+.footer-text {
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+
+.footer-text a {
+    color: var(--dtu-red);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer-text a:hover {
+    text-decoration: underline;
+}

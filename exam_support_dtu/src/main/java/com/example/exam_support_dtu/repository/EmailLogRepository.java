@@ -7,4 +7,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EmailLogRepository extends JpaRepository<EmailLog,Long> {
     long countByStatus(String status);
+    
+    // Tìm các Log dựa theo ID mẫu
+    java.util.List<EmailLog> findByTemplateId(Long templateId);
 }

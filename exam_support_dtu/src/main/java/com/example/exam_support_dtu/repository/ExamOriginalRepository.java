@@ -15,7 +15,7 @@ public interface ExamOriginalRepository extends JpaRepository<ExamOriginal, Long
 
     Optional<ExamOriginal> findByFileUrl(String fileUrl);
 
-    List<ExamOriginal> findByFileOriginalName( String fileOriginalName);
+    List<ExamOriginal> findByFileOriginalName(String fileOriginalName);
 
     // Đếm số lượng file theo status
     long countByStatus(FileStatus status);

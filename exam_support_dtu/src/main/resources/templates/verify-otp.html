@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Xác thực Email - Hệ thống DTU</title>
+    <style>
+        body { font-family: sans-serif; background: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .otp-box { background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
+        .otp-input { width: 100%; padding: 15px; font-size: 24px; text-align: center; letter-spacing: 10px; border: 2px solid #cbd5e1; border-radius: 8px; outline: none; margin-bottom: 20px; font-weight: bold;}
+        .otp-input:focus { border-color: #b91c1c; }
+        .btn { width: 100%; padding: 12px; background: #b91c1c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .btn:hover { background: #991b1b; }
+        .alert-error { color: #b91c1c; background: #fef2f2; padding: 10px; border-radius: 8px; font-size: 14px; margin-bottom: 20px;}
+    </style>
+</head>
+<body>
+
+<div class="otp-box">
+    <h2 style="margin-top: 0; color: #0f172a;">Xác thực Email</h2>
+    <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 24px;">
+        Chúng tôi đã gửi một mã gồm 6 chữ số đến email <br>
+        <strong th:text="${email}" style="color: #0f172a;"></strong>
+    </p>
+
+    <div th:if="${param.error}" class="alert-error" th:text="${param.error}"></div>
+
+    <form th:action="@{/verify-otp}" method="POST">
+        <input type="hidden" name="email" th:value="${email}">
+
+        <input type="text" name="otp" class="otp-input" placeholder="------" maxlength="6" required autocomplete="off">
+
+        <button type="submit" class="btn">XÁC NHẬN MÃ</button>
+    </form>
+
+    <div th:if="${param.success}" style="color: #15803d; background: #ecfdf5; padding: 10px; border-radius: 8px; font-size: 14px; margin-bottom: 20px;" th:text="${param.success}"></div>
+
+    <form th:action="@{/resend-otp}" method="POST" style="margin-top: 20px; font-size: 13px; color: #64748b;">
+        <input type="hidden" name="email" th:value="${email}">
+        Chưa nhận được mã?
+        <button type="submit" style="background: none; border: none; color: #2563eb; font-weight: bold; cursor: pointer; text-decoration: underline; padding: 0;">Gửi lại mã mới</button>
+    </form>
+</div>
+
+</body>
+</html>

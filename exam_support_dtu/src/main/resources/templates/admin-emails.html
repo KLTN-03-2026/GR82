@@ -1,320 +1,601 @@
 <!DOCTYPE html>
-<html th:replace="~{admin-layout :: admin_layout(~{::#email-content}, '/css/admin-email.css')}" xmlns:th="http://www.thymeleaf.org">
+<html th:replace="~{admin-layout :: admin_layout(~{::#email-content}, '/css/admin-email.css')}"
+    xmlns:th="http://www.thymeleaf.org">
+
 <body>
 
-<div id="email-content" class="flex flex-col h-full min-h-0">
-    <div class="stats-overview">
-        <div class="stat-box">
-            <div class="stat-icon bg-blue-light text-blue"><i class="fa-solid fa-paper-plane"></i></div>
-            <div class="stat-text"><p>TỔNG EMAIL ĐÃ GỬI</p><h4 th:text="${totalSent}">0</h4></div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-icon bg-orange-light text-orange"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div class="stat-text"><p>ĐANG CHỜ GỬI</p><h4 th:text="${totalPending}">0</h4></div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-icon bg-red-light text-red"><i class="fa-solid fa-circle-xmark"></i></div>
-            <div class="stat-text"><p>GỬI THẤT BẠI</p><h4 th:text="${totalFailed}">0</h4></div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-icon bg-green-light text-green"><i class="fa-solid fa-file-lines"></i></div>
-            <div class="stat-text"><p>MẪU EMAIL (TEMPLATES)</p><h4 th:text="${totalTemplates}">0</h4></div>
-        </div>
-    </div>
-
-    <div class="page-header-wrapper">
-        <div class="config-bar">
-            <label>Báo trước lịch thi:</label>
-            <div class="input-group">
-                <input type="number" th:value="${notifyDays}" id="configNotifyDays" min="1" max="30">
-                <span>ngày</span>
+    <div id="email-content" class="flex flex-col h-full min-h-0">
+        <div class="stats-overview">
+            <div class="stat-box">
+                <div class="stat-icon bg-blue-light text-blue"><i class="fa-solid fa-paper-plane"></i></div>
+                <div class="stat-text">
+                    <p>TỔNG EMAIL ĐÃ GỬI</p>
+                    <h4 th:text="${totalSent}">0</h4>
+                </div>
             </div>
-            <button class="btn-save-config" id="btnSaveConfig">Lưu</button>
-            <div class="divider"></div>
-            <span th:class="${isAutoMailOn} ? 'tag-green' : 'tag-gray'" id="btnToggleAutoMail" th:attr="data-status=${isAutoMailOn}" style="cursor: pointer; user-select: none; transition: 0.2s;">
-                <i class="fa-solid fa-power-off"></i>
-                <span th:text="|Auto-Mail: ${isAutoMailOn ? 'ON' : 'OFF'}|">Auto-Mail: ON</span>
-            </span>
-        </div>
-
-        <div class="header-actions">
-            <div class="table-search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" placeholder="Tìm kiếm email, tiêu đề...">
+            <div class="stat-box">
+                <div class="stat-icon bg-orange-light text-orange"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="stat-text">
+                    <p>ĐANG CHỜ GỬI</p>
+                    <h4 th:text="${totalPending}">0</h4>
+                </div>
             </div>
-            <button class="btn-outline"><i class="fa-solid fa-flask"></i> Test Gửi Mail</button>
-            <button class="btn-primary"><i class="fa-solid fa-plus"></i> Tạo Mẫu Mới</button>
+            <div class="stat-box">
+                <div class="stat-icon bg-red-light text-red"><i class="fa-solid fa-circle-xmark"></i></div>
+                <div class="stat-text">
+                    <p>GỬI THẤT BẠI</p>
+                    <h4 th:text="${totalFailed}">0</h4>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon bg-green-light text-green"><i class="fa-solid fa-file-lines"></i></div>
+                <div class="stat-text">
+                    <p>MẪU EMAIL (TEMPLATES)</p>
+                    <h4 th:text="${totalTemplates}">0</h4>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="content-layout">
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                    <tr>
-                        <th width="8%">ID</th>
-                        <th width="25%">THÔNG TIN NHẬN</th>
-                        <th width="32%">TIÊU ĐỀ EMAIL</th>
-                        <th width="15%">THỜI GIAN</th>
-                        <th width="12%">TRẠNG THÁI</th>
-                        <th width="8%" class="text-center">THAO TÁC</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td class="fw-bold text-gray">#1245</td>
-                        <td>
-                            <div class="user-info-cell">
-                                <div class="user-name-stack">
-                                    <span class="user-main-name">Nguyễn Văn A</span>
-                                    <span class="user-email">nguyenvan@dtu.edu.vn</span>
+        <div class="page-header-wrapper">
+            <div class="config-bar">
+                <label>Báo trước lịch thi:</label>
+                <div class="input-group">
+                    <input type="number" th:value="${notifyDays}" id="configNotifyDays" min="1" max="30">
+                    <span>ngày</span>
+                </div>
+                <button class="btn-save-config" id="btnSaveConfig">Lưu</button>
+                <div class="divider"></div>
+                <span th:class="${isAutoMailOn} ? 'tag-green' : 'tag-gray'" id="btnToggleAutoMail"
+                    th:attr="data-status=${isAutoMailOn}" style="cursor: pointer; user-select: none; transition: 0.2s;">
+                    <i class="fa-solid fa-power-off"></i>
+                    <span th:text="|Auto-Mail: ${isAutoMailOn ? 'ON' : 'OFF'}|">Auto-Mail: ON</span>
+                </span>
+            </div>
+
+            <div class="header-actions">
+                <div class="table-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Tìm kiếm email, tiêu đề...">
+                </div>
+                <button class="btn-outline" id="btnOpenTestMail"><i class="fa-solid fa-flask"></i> Test Gửi
+                    Mail</button>
+                <button class="btn-primary"><i class="fa-solid fa-plus"></i> Tạo Mẫu Mới</button>
+            </div>
+        </div>
+
+        <div class="content-layout">
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th width="8%">ID</th>
+                                <th width="25%">THÔNG TIN NHẬN</th>
+                                <th width="32%">TIÊU ĐỀ EMAIL</th>
+                                <th width="15%">THỜI GIAN</th>
+                                <th width="12%">TRẠNG THÁI</th>
+                                <th width="8%" class="text-center">THAO TÁC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold text-gray">#1245</td>
+                                <td>
+                                    <div class="user-info-cell">
+                                        <div class="user-name-stack">
+                                            <span class="user-main-name">Nguyễn Văn A</span>
+                                            <span class="user-email">nguyenvan@dtu.edu.vn</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-600 text-dark">[Nhắc nhở] Lịch thi môn Web</td>
+                                <td class="text-sm text-gray">10:30, 24/05/2026</td>
+                                <td><span class="status-badge badge-active"><span class="status-dot dot-green"></span>
+                                        Sent</span></td>
+                                <td class="text-center"><button class="btn-icon btn-detail" title="Chi tiết"><i
+                                            class="fa-regular fa-eye"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <span class="page-info">Hiển thị 1 - 1 của 1 email</span>
+                    <div class="page-controls">
+                        <button class="page-btn active">1</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity-sidebar">
+                <div class="activity-header">
+                    <h4>Mẫu Có Sẵn</h4>
+                    <span class="tag-blue" th:text="|${totalTemplates} MẪU|">0 MẪU</span>
+                </div>
+
+                <div class="template-list">
+                    <div class="template-card" th:each="tpl : ${templates}">
+                        <div class="template-info">
+                            <h5 th:text="${tpl.name}" th:class="${tpl.code == 'BAN_EXAM' ? 'text-red' : 'text-dark'}">
+                                Tên mẫu</h5>
+                            <p><i class="fa-solid fa-tag"></i> <span th:text="${tpl.subject}">Tiêu đề mẫu</span></p>
+                        </div>
+                        <button class="btn-icon card-btn" th:attr="data-id=${tpl.id}"><i
+                                class="fa-solid fa-pen"></i></button>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(templates)}"
+                        style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">
+                        Chưa có mẫu Email nào.
+                    </div>
+                </div>
+
+                <button class="btn-outline btn-block">Xem tất cả mẫu</button>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="templateModalOverlay">
+            <div class="modal-box">
+
+                <div class="modal-header">
+                    <h3 id="templateModalTitle">Tạo Mẫu Email Mới</h3>
+                    <button class="btn-icon" id="closeTemplateBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="tplId">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">TÊN MẪU<span class="text-red">*</span></label>
+                            <input type="text" id="tplName" class="form-control" placeholder="VD: Nhắc lịch thi đợt 1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">MÃ CODE (KHÔNG DẤU, VIẾT LIỀN) <span
+                                    class="text-red">*</span></label>
+                            <input type="text" id="tplCode" class="form-control code-input"
+                                placeholder="VD: NHAC_LICH_THI">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">TIÊU ĐỀ EMAIL GỬI ĐI <span class="text-red">*</span></label>
+                        <input type="text" id="tplSubject" class="form-control"
+                            placeholder="VD: [DTU] Thông báo lịch thi học kỳ...">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label flex-between">
+                            <span>NỘI DUNG EMAIL (HỖ TRỢ HTML) <span class="text-red">*</span></span>
+                            <span class="text-blue help-text"
+                                title="Các biến có thể dùng: [TEN_SV], [MA_SV], [TEN_MON], [PHONG_THI], [GIO_THI], [NGAY_THI]">Xem
+                                hướng dẫn biến { }</span>
+                        </label>
+                        <textarea id="tplBody" class="form-control" rows="8"
+                            placeholder="Kính gửi sinh viên [TEN_SV]..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-outline border-none" id="cancelTemplateBtn">Hủy bỏ</button>
+                    <button class="btn-primary" id="saveTemplateBtn"><i class="fa-solid fa-floppy-disk"></i> Lưu
+                        Mẫu</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="manageTemplatesModalOverlay">
+            <div class="modal-box" style="width: 900px; max-height: 85vh;">
+
+                <div class="modal-header">
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-layer-group text-blue"></i> Quản Lý Kho Mẫu
+                    </h3>
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <div class="table-search"
+                            style="width: 250px; margin: 0; padding: 8px 12px; background: #f8fafc;">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="searchTemplateInput" placeholder="Tìm tên mẫu, mã code...">
+                        </div>
+                        <button class="btn-icon" id="closeManageBtn"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+
+                <div class="modal-body" style="background: #f8fafc; padding: 24px; overflow-y: auto;">
+
+                    <div class="template-grid" id="allTemplatesContainer">
+
+                        <div class="template-grid-card" th:each="tpl : ${templates}">
+                            <div class="card-header">
+                                <h5 th:text="${tpl.name}">Tên Mẫu</h5>
+                                <span class="tag-gray" th:text="${tpl.code}"
+                                    style="font-family: monospace; font-size: 10px;">CODE</span>
+                            </div>
+                            <p class="card-subject"><i class="fa-solid fa-tag"></i> <span th:text="${tpl.subject}">Tiêu
+                                    đề mẫu</span></p>
+
+                            <div class="card-footer">
+                                <span class="text-sm fw-600 text-gray"
+                                    th:text="${#temporals.format(tpl.createdAt, 'dd/MM/yyyy')}">12/05/2026</span>
+                                <div class="action-buttons">
+                                    <button class="btn-icon text-blue edit-from-manage" th:attr="data-id=${tpl.id}"
+                                        title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="btn-icon text-red delete-from-manage" th:attr="data-id=${tpl.id}"
+                                        title="Xóa mẫu"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
-                        </td>
-                        <td class="fw-600 text-dark">[Nhắc nhở] Lịch thi môn Web</td>
-                        <td class="text-sm text-gray">10:30, 24/05/2026</td>
-                        <td><span class="status-badge badge-active"><span class="status-dot dot-green"></span> Sent</span></td>
-                        <td class="text-center"><button class="btn-icon btn-detail" title="Chi tiết"><i class="fa-regular fa-eye"></i></button></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                        </div>
 
-            <div class="pagination">
-                <span class="page-info">Hiển thị 1 - 1 của 1 email</span>
-                <div class="page-controls">
-                    <button class="page-btn active">1</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="activity-sidebar">
-            <div class="activity-header">
-                <h4>Mẫu Có Sẵn</h4>
-                <span class="tag-blue" th:text="|${totalTemplates} MẪU|">0 MẪU</span>
-            </div>
-
-            <div class="template-list">
-                <div class="template-card" th:each="tpl : ${templates}">
-                    <div class="template-info">
-                        <h5 th:text="${tpl.name}" th:class="${tpl.code == 'BAN_EXAM' ? 'text-red' : 'text-dark'}">Tên mẫu</h5>
-                        <p><i class="fa-solid fa-tag"></i> <span th:text="${tpl.subject}">Tiêu đề mẫu</span></p>
                     </div>
-                    <button class="btn-icon card-btn" th:attr="data-id=${tpl.id}"><i class="fa-solid fa-pen"></i></button>
-                </div>
 
-                <div th:if="${#lists.isEmpty(templates)}" style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">
-                    Chưa có mẫu Email nào.
                 </div>
             </div>
-
-            <button class="btn-outline btn-block">Xem tất cả mẫu</button>
         </div>
-    </div>
 
-    <div class="modal-overlay" id="templateModalOverlay">
-        <div class="modal-box">
+        <!-- MODAL TEST GỬI MAIL -->
+        <div class="modal-overlay" id="testMailModalOverlay">
+            <div class="modal-box" style="width: 500px;">
+                <div class="modal-header">
+                    <h3 id="testMailModalTitle"><i class="fa-solid fa-paper-plane text-blue"></i> Test Gửi Mail</h3>
+                    <button class="btn-icon" id="closeTestMailBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
 
-            <div class="modal-header">
-                <h3 id="templateModalTitle">Tạo Mẫu Email Mới</h3>
-                <button class="btn-icon" id="closeTemplateBtn"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="modal-body">
-                <input type="hidden" id="tplId">
-
-                <div class="form-grid">
+                <div class="modal-body">
                     <div class="form-group">
-                        <label class="form-label">TÊN MẪU<span class="text-red">*</span></label>
-                        <input type="text" id="tplName" class="form-control" placeholder="VD: Nhắc lịch thi đợt 1">
+                        <label class="form-label">EMAIL NGƯỜI NHẬN <span class="text-red">*</span></label>
+                        <input type="email" id="testEmailInput" class="form-control"
+                            placeholder="Ví dụ: example@gmail.com">
                     </div>
+
                     <div class="form-group">
-                        <label class="form-label">MÃ CODE (KHÔNG DẤU, VIẾT LIỀN) <span class="text-red">*</span></label>
-                        <input type="text" id="tplCode" class="form-control code-input" placeholder="VD: NHAC_LICH_THI">
+                        <label class="form-label">CHỌN MẪU EMAIL <span class="text-red">*</span></label>
+                        <select id="testTemplateSelect" class="form-control">
+                            <option value="">-- Chọn một mẫu --</option>
+                            <option th:each="tpl : ${templates}" th:value="${tpl.id}" th:text="${tpl.name}"></option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">TIÊU ĐỀ EMAIL GỬI ĐI <span class="text-red">*</span></label>
-                    <input type="text" id="tplSubject" class="form-control" placeholder="VD: [DTU] Thông báo lịch thi học kỳ...">
+                <div class="modal-footer">
+                    <button class="btn-outline border-none" id="cancelTestMailBtn">Hủy bỏ</button>
+                    <button class="btn-primary" id="sendTestMailBtn"><i class="fa-solid fa-paper-plane"></i> Gửi
+                        Ngay</button>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label flex-between">
-                        <span>NỘI DUNG EMAIL (HỖ TRỢ HTML) <span class="text-red">*</span></span>
-                        <span class="text-blue help-text" title="Các biến có thể dùng: [TEN_SV], [MA_SV], [TEN_MON], [PHONG_THI], [GIO_THI], [NGAY_THI]">Xem hướng dẫn biến { }</span>
-                    </label>
-                    <textarea id="tplBody" class="form-control" rows="8" placeholder="Kính gửi sinh viên [TEN_SV]..."></textarea>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-outline border-none" id="cancelTemplateBtn">Hủy bỏ</button>
-                <button class="btn-primary" id="saveTemplateBtn"><i class="fa-solid fa-floppy-disk"></i> Lưu Mẫu</button>
             </div>
         </div>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('templateModalOverlay');
-            const btnAddNew = document.querySelector('.header-actions .btn-primary');
-            const btnEdits = document.querySelectorAll('.card-btn');
-            const btnClose = document.getElementById('closeTemplateBtn');
-            const btnCancel = document.getElementById('cancelTemplateBtn');
-            const btnSave = document.getElementById('saveTemplateBtn');
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const modal = document.getElementById('templateModalOverlay');
+                const btnAddNew = document.querySelector('.header-actions .btn-primary');
+                const btnEdits = document.querySelectorAll('.card-btn');
+                const btnClose = document.getElementById('closeTemplateBtn');
+                const btnCancel = document.getElementById('cancelTemplateBtn');
+                const btnSave = document.getElementById('saveTemplateBtn');
 
-            const fId = document.getElementById('tplId');
-            const fName = document.getElementById('tplName');
-            const fCode = document.getElementById('tplCode');
-            const fSubject = document.getElementById('tplSubject');
-            const fBody = document.getElementById('tplBody');
-            const modalTitle = document.getElementById('templateModalTitle');
+                const fId = document.getElementById('tplId');
+                const fName = document.getElementById('tplName');
+                const fCode = document.getElementById('tplCode');
+                const fSubject = document.getElementById('tplSubject');
+                const fBody = document.getElementById('tplBody');
+                const modalTitle = document.getElementById('templateModalTitle');
 
-            const openModal = () => { modal.style.display = 'flex'; }
-            const closeModal = () => { modal.style.display = 'none'; }
-            btnClose.addEventListener('click', closeModal);
-            btnCancel.addEventListener('click', closeModal);
+                const openModal = () => { modal.style.display = 'flex'; }
+                const closeModal = () => { modal.style.display = 'none'; }
+                btnClose.addEventListener('click', closeModal);
+                btnCancel.addEventListener('click', closeModal);
 
-            // NÚT TẠO MỚI
-            if(btnAddNew) {
-                btnAddNew.addEventListener('click', () => {
-                    modalTitle.textContent = "Tạo Mẫu Email Mới";
-                    fId.value = ''; fName.value = ''; fCode.value = ''; fSubject.value = ''; fBody.value = '';
-                    fCode.readOnly = false;
-                    fCode.style.background = "#fff";
-                    openModal();
-                });
-            }
+                // ==========================================
+                // 1. Mẫu Mail
+                // ==========================================
+                // NÚT TẠO MỚI
+                if (btnAddNew) {
+                    btnAddNew.addEventListener('click', () => {
+                        modalTitle.textContent = "Tạo Mẫu Email Mới";
+                        fId.value = ''; fName.value = ''; fCode.value = ''; fSubject.value = ''; fBody.value = '';
+                        fCode.readOnly = false;
+                        fCode.style.background = "#fff";
+                        openModal();
+                    });
+                }
 
-            // NÚT SỬA
-            btnEdits.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    modalTitle.textContent = "Đang tải dữ liệu...";
-                    openModal();
+                // NÚT SỬA
+                btnEdits.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.getAttribute('data-id');
+                        modalTitle.textContent = "Đang tải dữ liệu...";
+                        openModal();
 
-                    fetch(`/api/admin/emails/templates/${id}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            modalTitle.textContent = "Chỉnh sửa Mẫu Email";
-                            fId.value = data.id;
-                            fName.value = data.name;
-                            fCode.value = data.code;
-                            fSubject.value = data.subject;
-                            fBody.value = data.bodyHtml || data.bodyText || '';
-                            fCode.readOnly = true;
-                            fCode.style.background = "#f1f5f9";
-                        })
-                        .catch(err => {
-                            alert("Lỗi không tải được dữ liệu mẫu!");
-                            closeModal();
-                        });
-                });
-            });
-
-            // LƯU DATA BẮN API
-            if(btnSave) {
-                btnSave.addEventListener('click', function() {
-                    if(!fName.value.trim() || !fCode.value.trim() || !fSubject.value.trim() || !fBody.value.trim()) {
-                        alert("Vui lòng nhập đầy đủ các trường có dấu *");
-                        return;
-                    }
-
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-                    this.disabled = true;
-
-                    fetch(`/api/admin/emails/templates/save`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: fId.value,
-                            name: fName.value,
-                            code: fCode.value,
-                            subject: fSubject.value,
-                            bodyHtml: fBody.value
-                        })
-                    })
-                    .then(res => res.json().then(data => ({ status: res.status, body: data })))
-                    .then(result => {
-                        if (result.status >= 400) throw new Error(result.body.message);
-                        alert(result.body.message);
-                        window.location.reload();
-                    })
-                    .catch(err => {
-                        alert(err.message);
-                        this.innerHTML = originalText;
-                        this.disabled = false;
+                        fetch(`/api/admin/emails/templates/${id}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                modalTitle.textContent = "Chỉnh sửa Mẫu Email";
+                                fId.value = data.id;
+                                fName.value = data.name;
+                                fCode.value = data.code;
+                                fSubject.value = data.subject;
+                                fBody.value = data.bodyHtml || data.bodyText || '';
+                                fCode.readOnly = true;
+                                fCode.style.background = "#f1f5f9";
+                            })
+                            .catch(err => {
+                                alert("Lỗi không tải được dữ liệu mẫu!");
+                                closeModal();
+                            });
                     });
                 });
-            }
 
-            // ==========================================
-            // XỬ LÝ LƯU CẤU HÌNH HỆ THỐNG (CONFIG BAR)
-            // ==========================================
-            const btnSaveConfig = document.getElementById('btnSaveConfig');
-            const inputNotifyDays = document.getElementById('configNotifyDays');
-            const btnToggleAutoMail = document.getElementById('btnToggleAutoMail');
+                // LƯU DATA Gọi API
+                if (btnSave) {
+                    btnSave.addEventListener('click', function () {
+                        if (!fName.value.trim() || !fCode.value.trim() || !fSubject.value.trim() || !fBody.value.trim()) {
+                            alert("Vui lòng nhập đầy đủ các trường có dấu *");
+                            return;
+                        }
 
-            // Hàm dùng chung để gọi API lưu cấu hình
-            const saveConfigAPI = (payload, successMsg) => {
-                fetch(`/api/admin/emails/config/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    // Nếu là thông báo lưu ngày thì hiện popup, còn bật/tắt công tắc thì im lặng cho mượt
-                    if(successMsg) alert(successMsg);
-                })
-                .catch(err => alert("Lỗi khi lưu cấu hình!"));
-            };
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+                        this.disabled = true;
 
-            // Sự kiện 1: Bấm nút "Lưu" số ngày
-            if(btnSaveConfig) {
-                btnSaveConfig.addEventListener('click', function() {
-                    const days = inputNotifyDays.value;
-                    if(days < 1) {
-                        alert("Số ngày báo trước tối thiểu là 1!");
-                        return;
-                    }
-                    saveConfigAPI({ notifyDays: days }, "Đã lưu số ngày báo trước thành công!");
+                        fetch(`/api/admin/emails/templates/save`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                id: fId.value,
+                                name: fName.value,
+                                code: fCode.value,
+                                subject: fSubject.value,
+                                bodyHtml: fBody.value
+                            })
+                        })
+                            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                            .then(result => {
+                                if (result.status >= 400) throw new Error(result.body.message);
+                                alert(result.body.message);
+                                window.location.reload();
+                            })
+                            .catch(err => {
+                                alert(err.message);
+                                this.innerHTML = originalText;
+                                this.disabled = false;
+                            });
+                    });
+                }
+
+                // ==========================================
+                // 2. XỬ LÝ LƯU CẤU HÌNH HỆ THỐNG (CONFIG BAR)
+                // ==========================================
+                const btnSaveConfig = document.getElementById('btnSaveConfig');
+                const inputNotifyDays = document.getElementById('configNotifyDays');
+                const btnToggleAutoMail = document.getElementById('btnToggleAutoMail');
+
+                // Hàm dùng chung để gọi API lưu cấu hình
+                const saveConfigAPI = (payload, successMsg) => {
+                    fetch(`/api/admin/emails/config/save`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            // Nếu là thông báo lưu ngày thì hiện popup, còn bật/tắt công tắc thì im lặng cho mượt
+                            if (successMsg) alert(successMsg);
+                        })
+                        .catch(err => alert("Lỗi khi lưu cấu hình!"));
+                };
+
+                // Sự kiện 1: Bấm nút "Lưu" số ngày
+                if (btnSaveConfig) {
+                    btnSaveConfig.addEventListener('click', function () {
+                        const days = inputNotifyDays.value;
+                        if (days < 1) {
+                            alert("Số ngày báo trước tối thiểu là 1!");
+                            return;
+                        }
+                        saveConfigAPI({ notifyDays: days }, "Đã lưu số ngày báo trước thành công!");
+                    });
+                }
+
+                // Sự kiện 2: Bấm vào cái Tag "Auto-Mail: ON/OFF" để bật tắt công tắc
+                if (btnToggleAutoMail) {
+                    btnToggleAutoMail.addEventListener('click', function () {
+                        // Lấy trạng thái hiện tại (chuỗi 'true' hoặc 'false')
+                        let isCurrentlyOn = this.getAttribute('data-status') === 'true';
+
+                        // Đảo ngược trạng thái
+                        let newState = !isCurrentlyOn;
+                        this.setAttribute('data-status', newState);
+
+                        // Thay đổi giao diện tức thì cho mượt
+                        if (newState) {
+                            this.className = 'tag-green';
+                            this.innerHTML = '<i class="fa-solid fa-power-off"></i> <span>Auto-Mail: ON</span>';
+                        } else {
+                            this.className = 'tag-gray';
+                            this.innerHTML = '<i class="fa-solid fa-power-off"></i> <span>Auto-Mail: OFF</span>';
+                        }
+
+                        // Gửi xuống DB ngầm (không cần alert)
+                        saveConfigAPI({ autoMailOn: newState.toString() });
+                    });
+                }
+
+                // ==========================================
+                // 3. TÌNH NĂNG TÌM KIẾM TRỰC TIẾP (LIVE SEARCH)
+                // ==========================================
+                const searchInput = document.querySelector('.table-search input');
+                const tableRows = document.querySelectorAll('.data-table tbody tr');
+
+                if (searchInput) {
+                    searchInput.addEventListener('keyup', function () {
+                        const searchTerm = this.value.toLowerCase().trim();
+                        tableRows.forEach(row => {
+                            // Lấy text của cột Thông tin nhận (cột 2) và Tiêu đề (cột 3)
+                            const receiverInfo = row.cells[1].textContent.toLowerCase();
+                            const subject = row.cells[2].textContent.toLowerCase();
+
+                            if (receiverInfo.includes(searchTerm) || subject.includes(searchTerm)) {
+                                row.style.display = '';
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+                    });
+                }
+
+                // ==========================================
+                // 4. XỬ LÝ MODAL QUẢN LÝ KHO MẪU (XEM TẤT CẢ)
+                // ==========================================
+                const manageModal = document.getElementById('manageTemplatesModalOverlay');
+                const btnViewAll = document.querySelector('.activity-sidebar .btn-block'); // Nút xem tất cả
+                const btnCloseManage = document.getElementById('closeManageBtn');
+                const searchTemplateInput = document.getElementById('searchTemplateInput');
+                const templateCards = document.querySelectorAll('.template-grid-card');
+
+                // Mở Modal Quản lý
+                if (btnViewAll) {
+                    btnViewAll.addEventListener('click', () => {
+                        manageModal.style.display = 'flex';
+                    });
+                }
+
+                // Đóng Modal Quản lý
+                if (btnCloseManage) {
+                    btnCloseManage.addEventListener('click', () => {
+                        manageModal.style.display = 'none';
+                    });
+                }
+
+                // Tính năng Tìm kiếm tức thì trong Kho Mẫu
+                if (searchTemplateInput) {
+                    searchTemplateInput.addEventListener('keyup', function () {
+                        const term = this.value.toLowerCase().trim();
+                        templateCards.forEach(card => {
+                            const textContent = card.textContent.toLowerCase();
+                            if (textContent.includes(term)) {
+                                card.style.display = 'flex';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    });
+                }
+
+                // Bắt sự kiện bấm nút Sửa BÊN TRONG Modal Quản lý
+                const btnEditFromManage = document.querySelectorAll('.edit-from-manage');
+                btnEditFromManage.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        // Đóng Modal Quản lý lại
+                        manageModal.style.display = 'none';
+
+                        // Kích hoạt logic mở Modal Sửa (tái sử dụng API ở bước trước)
+                        const id = this.getAttribute('data-id');
+                        modalTitle.textContent = "Đang tải dữ liệu...";
+                        openModal(); // Hàm mở Modal Edit đã viết ở bước 3
+
+                        fetch(`/api/admin/emails/templates/${id}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                modalTitle.textContent = "Chỉnh sửa Mẫu Email";
+                                fId.value = data.id;
+                                fName.value = data.name;
+                                fCode.value = data.code;
+                                fSubject.value = data.subject;
+                                fBody.value = data.bodyHtml || data.bodyText || '';
+                                fCode.readOnly = true;
+                                fCode.style.background = "#f1f5f9";
+                            })
+                            .catch(err => {
+                                alert("Lỗi không tải được dữ liệu mẫu!");
+                                closeModal();
+                            });
+                    });
                 });
-            }
 
-            // Sự kiện 2: Bấm vào cái Tag "Auto-Mail: ON/OFF" để bật tắt công tắc
-            if(btnToggleAutoMail) {
-                btnToggleAutoMail.addEventListener('click', function() {
-                    // Lấy trạng thái hiện tại (chuỗi 'true' hoặc 'false')
-                    let isCurrentlyOn = this.getAttribute('data-status') === 'true';
+                // Bắt sự kiện bấm nút Xóa BÊN TRONG Modal Quản lý
+                const btnDeleteFromManage = document.querySelectorAll('.delete-from-manage');
+                btnDeleteFromManage.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.getAttribute('data-id');
 
-                    // Đảo ngược trạng thái
-                    let newState = !isCurrentlyOn;
-                    this.setAttribute('data-status', newState);
-
-                    // Thay đổi giao diện tức thì cho mượt
-                    if(newState) {
-                        this.className = 'tag-green';
-                        this.innerHTML = '<i class="fa-solid fa-power-off"></i> <span>Auto-Mail: ON</span>';
-                    } else {
-                        this.className = 'tag-gray';
-                        this.innerHTML = '<i class="fa-solid fa-power-off"></i> <span>Auto-Mail: OFF</span>';
-                    }
-
-                    // Gửi xuống DB ngầm (không cần alert)
-                    saveConfigAPI({ autoMailOn: newState.toString() });
+                        if (confirm("Bạn có chắc chắn muốn xóa mẫu này không? (Hành động này không thể hoàn tác)")) {
+                            fetch(`/api/admin/emails/templates/${id}`, {
+                                method: 'DELETE'
+                            })
+                                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                                .then(result => {
+                                    if (result.status >= 400) throw new Error(result.body.message);
+                                    alert(result.body.message);
+                                    window.location.reload(); // Tải lại trang
+                                })
+                                .catch(err => {
+                                    alert(err.message);
+                                });
+                        }
+                    });
                 });
-            }
 
+                // ==========================================
+                // 5. XỬ LÝ MODAL TEST GỬI MAIL
+                // ==========================================
+                const testMailModal = document.getElementById('testMailModalOverlay');
+                const btnOpenTestMail = document.getElementById('btnOpenTestMail');
+                const btnCloseTestMail = document.getElementById('closeTestMailBtn');
+                const btnCancelTestMail = document.getElementById('cancelTestMailBtn');
+                const btnSendTestMail = document.getElementById('sendTestMailBtn');
 
+                const testEmailInput = document.getElementById('testEmailInput');
+                const testTemplateSelect = document.getElementById('testTemplateSelect');
 
+                const openTestModal = () => { testMailModal.style.display = 'flex'; }
+                const closeTestModal = () => { testMailModal.style.display = 'none'; }
 
-        });
-    </script>
-</div>
+                if (btnOpenTestMail) btnOpenTestMail.addEventListener('click', openTestModal);
+                if (btnCloseTestMail) btnCloseTestMail.addEventListener('click', closeTestModal);
+                if (btnCancelTestMail) btnCancelTestMail.addEventListener('click', closeTestModal);
+
+                if (btnSendTestMail) {
+                    btnSendTestMail.addEventListener('click', function () {
+                        const email = testEmailInput.value.trim();
+                        const templateId = testTemplateSelect.value;
+
+                        if (!email || !templateId) {
+                            alert("Vui lòng nhập Email và chọn Mẫu!");
+                            return;
+                        }
+
+                        // Đổi trạng thái nút
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+                        this.disabled = true;
+
+                        // Gọi API test gửi mail
+                        fetch(`/api/admin/emails/test-send`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: email, templateId: templateId })
+                        })
+                            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                            .then(result => {
+                                if (result.status >= 400) throw new Error(result.body.message);
+                                alert(result.body.message);
+                                closeTestModal();
+                                this.innerHTML = originalText;
+                                this.disabled = false;
+                                testEmailInput.value = ''; // clear input
+                            })
+                            .catch(err => {
+                                alert(err.message);
+                                this.innerHTML = originalText;
+                                this.disabled = false;
+                            });
+                    });
+                }
+
+            });
+        </script>
+    </div>
 
 </body>
+
 </html>

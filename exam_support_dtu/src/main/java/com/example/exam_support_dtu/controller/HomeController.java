@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class HomeController {
 
     // 1. Hàm hiển thị Trang chủ tra cứu
-    @GetMapping("/")
+    @GetMapping("/home")
     public String showSearchPage() {
         // Trả về file index.html nằm trong thư mục src/main/resources/templates
         return "index";
@@ -18,12 +18,14 @@ public class HomeController {
     // 2. Hàm xử lý khi Sinh viên bấm nút "Tra cứu"
     @GetMapping("/search")
     public String searchExam(@RequestParam("studentCode") String studentCode, Model model) {
-        // 'Model' là chiếc túi để Controller bỏ dữ liệu vào và mang ra ngoài giao diện HTML
+        // 'Model' là chiếc túi để Controller bỏ dữ liệu vào và mang ra ngoài giao diện
+        // HTML
 
         // Tạm thời ta cứ gói mã SV mà người dùng nhập vào túi để mang sang trang sau
         model.addAttribute("studentCode", studentCode);
 
-        // (Ở phần sau, chỗ này sẽ gọi hàm DB: List<ExamStudent> list = ... roi put vao model)
+        // (Ở phần sau, chỗ này sẽ gọi hàm DB: List<ExamStudent> list = ... roi put vao
+        // model)
 
         // Trả về file result.html (Trang kết quả - ta sẽ làm ở bước tiếp theo)
         return "result";

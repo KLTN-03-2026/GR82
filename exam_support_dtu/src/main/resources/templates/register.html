@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Duy Tân Exam Support</title>
+    <link rel="stylesheet" th:href="@{/css/register.css}">
+</head>
+
+<body>
+
+    <div class="login-card">
+        <div class="logo">DUY TÂN</div>
+        <div class="subtitle">Đăng ký tài khoản sinh viên</div>
+
+        <div th:if="${param.error}" class="error-msg" th:text="${param.error}">Lỗi đăng ký!</div>
+
+        <form th:action="@{/register}" method="POST">
+            <div class="input-group">
+                <label>Họ và Tên</label>
+                <input type="text" name="fullName" placeholder="VD: Nguyễn Văn A" required autofocus>
+            </div>
+
+            <div class="input-group">
+                <label>Email Duy Tân</label>
+                <input type="email" name="email" placeholder="username@dtu.edu.vn" required>
+            </div>
+
+            <div class="input-group">
+                <label>Mật khẩu</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <div class="input-group">
+                <label>Xác nhận mật khẩu</label>
+                <input type="password" name="confirmPassword" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-login">ĐĂNG KÝ NGAY</button>
+        </form>
+
+        <div class="footer-text">
+            Đã có tài khoản? <a href="/login">Đăng nhập tại đây</a>
+        </div>
+    </div>
+
+</body>
+
+</html>
