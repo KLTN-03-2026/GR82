@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả tra cứu lịch thi - DTU Supports</title>
+
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <!-- User Home CSS -->
+    <link rel="stylesheet" th:href="@{/css/user-home.css}">
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <!-- TopAppBar -->
+    <header class="topbar">
+        <div class="container topbar-content">
+            <div class="topbar-left">
+                <div class="logo">DTU Supports</div>
+
+                <nav class="nav-links">
+                    <a class="nav-item" th:href="@{/}">Trang chủ</a>
+                    <a class="nav-item active" th:href="@{/user/schedules}">Lịch thi</a>
+                    <a class="nav-item" th:href="@{/user/documents}">Tài liệu</a>
+                </nav>
+            </div>
+
+            <div class="topbar-right">
+                <button class="icon-btn" title="Trợ giúp">
+                    <span class="material-symbols-outlined">help</span>
+                </button>
+
+                <button class="icon-btn" title="Cài đặt">
+                    <span class="material-symbols-outlined">settings</span>
+                </button>
+
+                <button class="notif-text">Thông báo</button>
+
+                <div class="user-profile">
+                    <span class="material-symbols-outlined" style="font-size: 28px; color: #64748b;">account_circle</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="container">
+        <div class="main-layout">
+
+            <!-- Main -->
+            <main class="content-area">
+
+                <!-- Search Section -->
+                <section class="card search-section">
+                    <h1 class="section-title">Kết quả tra cứu lịch thi</h1>
+                    <p class="section-subtitle">
+                        Kết quả tra cứu cho mã sinh viên:
+                        <strong th:text="${studentCode}">28211...</strong>
+                    </p>
+
+                    <form th:action="@{/search}" method="get" class="search-form">
+                        <div class="form-group">
+                            <label class="label" for="studentCode">Mã sinh viên</label>
+                            <input
+                                    id="studentCode"
+                                    class="input-control"
+                                    type="text"
+                                    name="studentCode"
+                                    placeholder="Nhập mã sinh viên"
+                                    th:value="${studentCode}"
+                                    required
+                                    autocomplete="off">
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-primary" type="submit">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">search</span>
+                                Tra cứu lại
+                            </button>
+
+                            <a class="btn btn-secondary" th:href="@{/}">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
+                                Về trang chủ
+                            </a>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Student Summary -->
+                <section class="card student-summary">
+                    <div class="avatar-initials">SV</div>
+
+                    <div class="student-info">
+                        <h2 th:text="${studentCode}">Mã sinh viên</h2>
+                        <p>
+                            Tìm thấy
+                            <strong th:text="${totalResults}">0</strong>
+                            lịch thi phù hợp trong hệ thống.
+                        </p>
+                    </div>
+
+                    <div class="status-badge">
+                        <span class="dot"></span>
+                        <span class="status-text">SEARCH DONE</span>
+                    </div>
+                </section>
+
+                <!-- Message nếu không tìm thấy -->
+                <section class="card search-section"
+                         th:if="${message != null}">
+                    <h2 class="section-title" style="font-size: 1.125rem;">Thông báo</h2>
+                    <p class="section-subtitle" th:text="${message}">
+                        Không tìm thấy lịch thi phù hợp.
+                    </p>
+                </section>
+
+                <!-- Exam List -->
+                <section class="results-container" th:if="${examResults != null and !examResults.isEmpty()}">
+                    <div class="results-header">
+                        <h2>Lịch thi tìm thấy</h2>
+                        <span class="results-count">
+                            Hiển thị <span th:text="${totalResults}">0</span> kết quả
+                        </span>
+                    </div>
+
+                    <!-- Exam Card -->
+                    <div class="card exam-card"
+                         style="margin-bottom: 1rem;"
+                         th:each="exam : ${examResults}">
+
+                        <div class="exam-header">
+                            <div style="display: flex; align-items: center;">
+                                <span class="course-tag" th:text="${exam.courseCode}">CS301</span>
+                                <h3 class="course-title" th:text="${exam.courseName}">
+                                    Data Structures and Algorithms
+                                </h3>
+                            </div>
+
+                            <span class="credit-badge">
+                                <span th:text="${exam.credit != null ? exam.credit : 'N/A'}">3</span> Credits
+                            </span>
+                        </div>
+
+                        <div class="exam-body">
+                            <div class="info-block">
+                                <span class="info-label">Ngày & giờ thi</span>
+                                <div class="info-value">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">calendar_today</span>
+                                    <span th:text="${exam.examDate != null ? exam.examDate : 'Chưa cập nhật'}">
+                                        2026-01-19
+                                    </span>
+                                </div>
+                                <span class="info-subtext"
+                                      th:text="${exam.examTime != null ? exam.examTime : 'Chưa cập nhật giờ thi'}">
+                                    13h30
+                                </span>
+                            </div>
+
+                            <div class="info-block">
+                                <span class="info-label">Phòng thi</span>
+                                <div class="info-value">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">location_on</span>
+                                    <span th:text="${exam.roomName != null ? exam.roomName : 'Chưa cập nhật'}">
+                                        Room 302
+                                    </span>
+                                </div>
+                                <span class="info-subtext"
+                                      th:text="${exam.location != null ? exam.location : 'Chưa cập nhật địa điểm'}">
+                                    Main Campus
+                                </span>
+                            </div>
+
+                            <div class="info-block">
+                                <span class="info-label">Thông tin lớp</span>
+                                <div class="info-value">
+                                    Lớp HP:
+                                    <span th:text="${exam.classCode != null ? exam.classCode : 'N/A'}">CS301-A</span>
+                                </div>
+                                <span class="info-subtext" style="margin-left: 0;">
+                                    Lớp SH:
+                                    <span th:text="${exam.studentClass != null ? exam.studentClass : 'N/A'}">SE15</span>
+                                </span>
+                            </div>
+
+                            <div class="info-block">
+                                <span class="info-label">Số báo danh</span>
+                                <div class="info-value" style="font-weight: 700;"
+                                     th:text="${exam.seatNumber != null ? exam.seatNumber : 'N/A'}">
+                                    45
+                                </div>
+                                <span class="info-subtext" style="margin-left: 0;">
+                                    Lần thi:
+                                    <span th:text="${exam.attempt != null ? exam.attempt : 'N/A'}">1</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="exam-footer">
+                            <button class="btn-text" type="button">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">visibility</span>
+                                Xem chi tiết
+                            </button>
+
+                            <button class="btn-text btn-follow" type="button">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">bookmark_add</span>
+                                Theo dõi
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Sidebar -->
+            <aside class="sidebar-area">
+
+                <!-- AI Assistant -->
+                <section class="card sidebar-card">
+                    <div class="sidebar-card-header">
+                        <span class="material-symbols-outlined">forum</span>
+                        <h3>Trợ lý AI</h3>
+                    </div>
+
+                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Hỏi AI về lịch thi, phòng thi hoặc cách chuẩn bị trước kỳ thi.
+                    </p>
+
+                    <div class="ai-container">
+                        <textarea class="ai-textarea" placeholder="Ví dụ: Tôi cần chuẩn bị gì trước ngày thi?"></textarea>
+                        <button class="send-btn">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">send</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Followed Exams -->
+                <section class="card sidebar-card">
+                    <div class="sidebar-card-header">
+                        <span class="material-symbols-outlined">bookmark</span>
+                        <h3>Lịch đã theo dõi</h3>
+                        <span class="badge-count">0</span>
+                    </div>
+
+                    <div class="followed-list">
+                        <div class="followed-item">
+                            <div class="item-top">
+                                <span class="item-code">DTU</span>
+                                <span class="item-status">READY</span>
+                            </div>
+                            <div class="item-name">Chức năng theo dõi sẽ được bổ sung sau</div>
+                            <div class="item-time">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">notifications</span>
+                                Nhắc nhở lịch thi
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </aside>
+        </div>
+    </div>
+</div>
+</body>
+</html>

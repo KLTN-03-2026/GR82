@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="light" lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+
+    <title>DTU Supports - Tài liệu</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <link rel="stylesheet" th:href="@{/css/user/user-documents.css}" href="/css/user/user-documents.css">
+</head>
+
+<body>
+<!-- Top Navigation Bar -->
+<header class="user-topbar">
+    <nav class="user-topbar-inner">
+        <div class="user-topbar-left">
+            <span class="user-logo">DTU Supports</span>
+
+            <div class="user-nav">
+                <a class="user-nav-link" th:href="@{/}">Trang chủ</a>
+                <a class="user-nav-link" th:href="@{/user/schedules}">Lịch thi</a>
+                <a class="user-nav-link active" th:href="@{/user/documents}">Tài liệu</a>
+            </div>
+        </div>
+
+        <div class="user-topbar-right">
+            <button class="topbar-ai-btn">Ask AI</button>
+
+            <div class="topbar-icon-group">
+                <button class="topbar-icon-btn">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+
+                <button class="topbar-icon-btn">
+                    <span class="material-symbols-outlined">account_circle</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="documents-main">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <h1 class="hero-title">Tài liệu học tập &amp; ôn thi</h1>
+        <p class="hero-subtitle">
+            Kho tài liệu chính thống và cộng đồng đóng góp giúp bạn chinh phục mọi kỳ thi.
+        </p>
+    </section>
+
+    <!-- Search & Filter Area -->
+    <section class="filter-section">
+        <div class="filter-group filter-search">
+            <label class="filter-label">Tìm kiếm tài liệu</label>
+
+            <div class="search-input-wrapper">
+                <span class="material-symbols-outlined">search</span>
+                <input
+                        class="filter-control search-control"
+                        placeholder="Nhập tên môn học, mã học phần..."
+                        type="text"
+                />
+            </div>
+        </div>
+
+        <div class="filter-group filter-select">
+            <label class="filter-label">Loại tài liệu</label>
+
+            <select class="filter-control">
+                <option>Tất cả</option>
+                <option>PDF</option>
+                <option>Excel</option>
+                <option>Khác</option>
+            </select>
+        </div>
+
+        <div class="filter-group filter-select">
+            <label class="filter-label">Học kỳ</label>
+
+            <select class="filter-control">
+                <option>Tất cả học kỳ</option>
+                <option>2023-2024</option>
+                <option>2024-2025</option>
+                <option>2025-2026</option>
+            </select>
+        </div>
+
+        <button class="filter-btn" type="button">
+            <span class="material-symbols-outlined">filter_list</span>
+            Lọc
+        </button>
+    </section>
+
+    <div class="academic-grid">
+        <!-- Document List -->
+        <section class="document-list">
+
+            <!-- Nếu có dữ liệu file -->
+            <article class="document-card"
+                     th:if="${filePage != null and !filePage.content.isEmpty()}"
+                     th:each="file : ${filePage.content}">
+
+                <div class="document-card-inner">
+
+                    <!-- Icon PDF -->
+                    <div class="document-icon-box document-icon-pdf"
+                         th:if="${file.extension != null and file.extension.name().equalsIgnoreCase('pdf')}">
+                        <span class="material-symbols-outlined">picture_as_pdf</span>
+                    </div>
+
+                    <!-- Icon non-PDF -->
+                    <div class="document-icon-box document-icon-doc"
+                         th:if="${file.extension == null or !file.extension.name().equalsIgnoreCase('pdf')}">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+
+                    <div class="document-content">
+                        <div class="document-title-row">
+                            <h3 class="document-title"
+                                th:text="${file.originalName != null ? file.originalName : file.storedName}">
+                                Đề thi mẫu Cấu trúc dữ liệu và Giải thuật
+                            </h3>
+
+                            <span class="document-type-badge"
+                                  th:text="${file.extension != null ? file.extension.name().toUpperCase() : 'FILE'}">
+                                PDF
+                            </span>
+                        </div>
+
+                        <div class="document-meta-grid">
+                            <div class="document-meta-item">
+                                <span class="material-symbols-outlined">menu_book</span>
+                                <span th:text="${file.sourceName != null ? file.sourceName : 'DTU Supports'}">
+                                    DTU Supports
+                                </span>
+                            </div>
+
+                            <div class="document-meta-item">
+                                <span class="material-symbols-outlined">event</span>
+                                <span th:text="${file.uploadedAt != null ? #temporals.format(file.uploadedAt, 'dd/MM/yyyy') : 'Chưa cập nhật'}">
+                                    15/05/2024
+                                </span>
+                            </div>
+
+                            <div class="document-meta-item">
+                                <span class="material-symbols-outlined">storage</span>
+                                <span>
+                                    <span th:text="${file.fileSize != null ? file.fileSize : 0}">0</span>
+                                    bytes
+                                </span>
+                            </div>
+
+                            <div class="document-meta-item">
+                                <span class="material-symbols-outlined">verified</span>
+                                <span>Hệ thống DTU</span>
+                            </div>
+                        </div>
+
+                        <div class="document-actions">
+                            <a class="document-btn document-btn-outline"
+                               th:href="@{/api/user/documents/view/{id}(id=${file.id})}"
+                               target="_blank">
+                                Xem chi tiết
+                            </a>
+
+                            <a class="document-btn document-btn-outline"
+                               th:href="@{/api/user/documents/download/{id}(id=${file.id})}">
+                                <span class="material-symbols-outlined">download</span>
+                                Tải xuống
+                            </a>
+
+                            <button class="document-btn document-btn-primary" type="button">
+                                <span class="material-symbols-outlined">psychology</span>
+                                Hỏi AI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Nếu không có dữ liệu -->
+            <article class="document-card"
+                     th:if="${filePage == null or filePage.content.isEmpty()}">
+                <div class="document-card-inner">
+                    <div class="document-icon-box document-icon-doc">
+                        <span class="material-symbols-outlined">info</span>
+                    </div>
+
+                    <div class="document-content">
+                        <div class="document-title-row">
+                            <h3 class="document-title">Chưa có tài liệu</h3>
+                            <span class="document-type-badge">EMPTY</span>
+                        </div>
+
+                        <div class="document-meta-grid">
+                            <div class="document-meta-item">
+                                <span class="material-symbols-outlined">info</span>
+                                Hệ thống chưa có file tài liệu để hiển thị.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Pagination -->
+            <div class="document-actions"
+                 th:if="${filePage != null and filePage.totalPages > 1}">
+                <a class="document-btn document-btn-outline"
+                   th:if="${filePage.hasPrevious()}"
+                   th:href="@{/user/documents(page=${filePage.number - 1}, size=${filePage.size})}">
+                    Trang trước
+                </a>
+
+                <span class="document-btn document-btn-outline">
+                    Trang
+                    <span th:text="${filePage.number + 1}">1</span>
+                    /
+                    <span th:text="${filePage.totalPages}">1</span>
+                </span>
+
+                <a class="document-btn document-btn-outline"
+                   th:if="${filePage.hasNext()}"
+                   th:href="@{/user/documents(page=${filePage.number + 1}, size=${filePage.size})}">
+                    Trang sau
+                </a>
+            </div>
+        </section>
+
+        <!-- Right Sidebar -->
+        <aside class="documents-sidebar">
+            <!-- AI Assistant Card -->
+            <section class="ai-card">
+                <div class="ai-card-header">
+                    <div class="ai-card-title">
+                        <span class="material-symbols-outlined">smart_toy</span>
+                        <h4>Hỏi AI Assistant</h4>
+                    </div>
+                </div>
+
+                <div class="ai-card-body">
+                    <p class="ai-card-description">
+                        Sử dụng AI để tóm tắt nội dung tài liệu hoặc giải thích các khái niệm khó trong bài học.
+                    </p>
+
+                    <div class="ai-suggestion-list">
+                        <button class="ai-suggestion-btn" type="button">Tóm tắt đề cương</button>
+                        <button class="ai-suggestion-btn" type="button">Giải bài tập CTDL</button>
+                        <button class="ai-suggestion-btn" type="button">Lộ trình ôn tập</button>
+                    </div>
+
+                    <div class="ai-input-wrapper">
+                        <input class="ai-input" placeholder="Hỏi AI về tài liệu..." type="text"/>
+
+                        <button class="ai-send-btn" type="button">
+                            <span class="material-symbols-outlined">send</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Documents -->
+            <section class="recent-card">
+                <div class="recent-card-header">
+                    <h4>Tài liệu gần đây</h4>
+                    <span class="material-symbols-outlined">history</span>
+                </div>
+
+                <ul class="recent-list">
+                    <li th:if="${filePage != null}"
+                        th:each="file, iterStat : ${filePage.content}"
+                        th:if="${iterStat.index < 3}">
+                        <a class="recent-link"
+                           th:href="@{/api/user/documents/view/{id}(id=${file.id})}"
+                           target="_blank">
+                            <span class="material-symbols-outlined">description</span>
+
+                            <div class="recent-text">
+                                <p class="recent-title"
+                                   th:text="${file.originalName != null ? file.originalName : file.storedName}">
+                                    Slide Chương 4 - OS
+                                </p>
+                                <p class="recent-time">
+                                    <span th:text="${file.uploadedAt != null ? #temporals.format(file.uploadedAt, 'dd/MM/yyyy') : 'Chưa cập nhật'}">
+                                        Đã xem 2 giờ trước
+                                    </span>
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Banner Section -->
+            <section class="study-banner">
+                <img
+                        alt="Academic Library"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKOIC61RXQ37Laci9XR_EwSVMd4JaqYXy52tGVjPCA6bwze0ICumWDL5jXHnqRcqWAwtHjvdgLXgqDU49KvKbzerLlosafrBZpy4BKVIZVWcqjsHAU2IlaKlvF8lu95Lc1FVbATZfBCbF6M97A8AkFCumOrDaiwLglUHIkz4-08dixvnyJTuBWeSUzQ3h3Zlzq_3Gc4EIU-95C1vssqt0AmGV4QpmDZ6g1XiF-rr75sVPuKw8VR_QMYAPATEBztG91MvruXJc1qMs"
+                />
+
+                <div class="study-banner-overlay">
+                    <p class="study-banner-label">Mẹo học tập</p>
+                    <p class="study-banner-title">
+                        Khám phá cách ghi chú hiệu quả bằng phương pháp Cornell.
+                    </p>
+                </div>
+            </section>
+        </aside>
+    </div>
+</main>
+
+<footer class="user-footer">
+    <div class="user-footer-inner">
+        <div class="footer-brand">
+            <span class="footer-logo">DTU Supports</span>
+            <p class="footer-copy">© 2024 Duy Tan University. All rights reserved.</p>
+        </div>
+
+        <div class="footer-links">
+            <a href="#">Quy định bảo mật</a>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Liên hệ hỗ trợ</a>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

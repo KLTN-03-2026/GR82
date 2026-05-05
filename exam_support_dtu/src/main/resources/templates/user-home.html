@@ -1,49 +1,14 @@
-<!--<!DOCTYPE html>-->
-<!--<html lang="vi" xmlns:th="http://www.thymeleaf.org">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
-<!--    <title>Tra Cứu Lịch Thi - DTU</title>-->
-<!--    <link rel="stylesheet" th:href="@{/css/style.css}">-->
-<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">-->
-<!--</head>-->
-<!--<body>-->
-
-<!--<div class="search-container">-->
-<!--    <div class="logo-area">-->
-<!--        <h1>Tra Cứu Lịch Thi</h1>-->
-<!--        <p>Hệ thống hỗ trợ tra cứu lịch thi nhanh chóng</p>-->
-<!--    </div>-->
-
-<!--    <form th:action="@{/search}" method="get" class="search-form">-->
-<!--        <div class="input-group">-->
-<!--            <i class="fa-solid fa-magnifying-glass search-icon"></i>-->
-<!--            <input type="text"-->
-<!--                   name="studentCode"-->
-<!--                   placeholder="Nhập mã sinh viên của bạn (VD: 28211...)"-->
-<!--                   required-->
-<!--                   autocomplete="off">-->
-<!--            <button type="submit">Tra cứu ngay</button>-->
-<!--        </div>-->
-<!--    </form>-->
-<!--</div>-->
-
-<!--</body>-->
-<!--</html>-->
-
-
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DTU Supports - Tra cứu lịch thi</title>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 
-    <!-- Fonts and Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <title>DTU Supports - Trang chủ</title>
 
-    <!-- User Home CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
     <link rel="stylesheet" th:href="@{/css/user/user-home.css}" href="/css/user/user-home.css">
 </head>
 
@@ -64,15 +29,15 @@
             </div>
 
             <div class="topbar-right">
-                <button class="icon-btn" title="Trợ giúp" type="button">
+                <button class="icon-btn" title="Help">
                     <span class="material-symbols-outlined">help</span>
                 </button>
 
-                <button class="icon-btn" title="Cài đặt" type="button">
+                <button class="icon-btn" title="Settings">
                     <span class="material-symbols-outlined">settings</span>
                 </button>
 
-                <button class="notif-text" type="button">Thông báo</button>
+                <button class="notif-text">Notifications</button>
 
                 <div class="user-profile">
                     <span class="material-symbols-outlined" style="font-size: 28px; color: #64748b;">account_circle</span>
@@ -90,131 +55,141 @@
 
                 <!-- Search Section -->
                 <section class="card search-section">
-                    <h1 class="section-title">Tra cứu lịch thi</h1>
+                    <h1 class="section-title">Exam Schedule Lookup</h1>
                     <p class="section-subtitle">
-                        Nhập mã sinh viên để tra cứu lịch thi mới nhất từ hệ thống DTU Supports.
+                        Search for your upcoming exam schedules by student code and semester.
                     </p>
 
-                    <form th:action="@{/user/schedules}" method="get" class="search-form">
+                    <form th:action="@{/search}" method="get" class="search-form">
                         <div class="form-group">
-                            <label class="label" for="studentCode">Mã sinh viên</label>
+                            <label class="label" for="studentCode">Student Code</label>
                             <input
                                     id="studentCode"
                                     class="input-control"
+                                    placeholder="e.g. 123456789"
                                     type="text"
                                     name="studentCode"
-                                    placeholder="Ví dụ: 28211..."
                                     th:value="${studentCode}"
                                     required
-                                    autocomplete="off">
+                                    autocomplete="off"/>
                         </div>
 
                         <div class="form-group">
-                            <label class="label" for="semester">Học kỳ</label>
+                            <label class="label" for="semester">Semester</label>
                             <select id="semester" class="input-control" name="semester">
-                                <option value="">Tất cả học kỳ</option>
-                                <option value="Spring 2024" th:selected="${semester == 'Spring 2024'}">Spring 2024</option>
-                                <option value="Fall 2023" th:selected="${semester == 'Fall 2023'}">Fall 2023</option>
-                                <option value="Summer 2024" th:selected="${semester == 'Summer 2024'}">Summer 2024</option>
+                                <option value="">All semesters</option>
+                                <option value="Spring 2024">Spring 2024</option>
+                                <option value="Fall 2023">Fall 2023</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label class="label" for="courseFilter">Môn học</label>
+                            <label class="label" for="courseFilter">Course Filter (Optional)</label>
                             <input
                                     id="courseFilter"
                                     class="input-control"
+                                    placeholder="Keyword"
                                     type="text"
-                                    name="courseFilter"
-                                    placeholder="Nhập mã môn hoặc tên môn"
-                                    th:value="${courseFilter}"
-                                    autocomplete="off">
+                                    name="courseFilter"/>
                         </div>
 
                         <div class="btn-group">
                             <button class="btn btn-primary" type="submit">
                                 <span class="material-symbols-outlined" style="font-size: 18px;">search</span>
-                                Tra cứu
+                                Search
                             </button>
 
                             <button class="btn btn-secondary" type="button">
                                 <span class="material-symbols-outlined" style="font-size: 18px;">forum</span>
-                                Hỏi AI
+                                Ask AI
                             </button>
                         </div>
                     </form>
                 </section>
 
-                <!-- Student Summary Placeholder -->
+                <!-- Student Summary -->
                 <section class="card student-summary">
                     <div class="avatar-initials">DTU</div>
 
                     <div class="student-info">
                         <h2>DTU Supports</h2>
-                        <p>Tra cứu lịch thi nhanh chóng, chính xác và thuận tiện.</p>
+                        <p>Exam schedule lookup system for Duy Tan University students.</p>
                     </div>
 
                     <div class="status-badge">
                         <span class="dot"></span>
-                        <span class="status-text">System Online</span>
+                        <span class="status-text">Active System</span>
                     </div>
                 </section>
 
-                <!-- Intro Section -->
+                <!-- Overview -->
                 <section class="results-container">
                     <div class="results-header">
-                        <h2>Hướng dẫn sử dụng</h2>
-                        <span class="results-count">3 bước đơn giản</span>
+                        <h2>System Overview</h2>
+                        <span class="results-count">Live data</span>
                     </div>
 
                     <div class="card exam-card">
                         <div class="exam-header">
                             <div style="display: flex; align-items: center;">
-                                <span class="course-tag">STEP 1</span>
-                                <h3 class="course-title">Nhập mã sinh viên</h3>
+                                <span class="course-tag">DTU</span>
+                                <h3 class="course-title">DTU Supports Overview</h3>
                             </div>
-                            <span class="credit-badge">Bắt buộc</span>
+                            <span class="credit-badge">Portal</span>
                         </div>
 
                         <div class="exam-body">
                             <div class="info-block">
-                                <span class="info-label">Bước 1</span>
+                                <span class="info-label">Schedules</span>
                                 <div class="info-value">
-                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">badge</span>
-                                    Nhập mã sinh viên
+                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">event</span>
+                                    <span th:text="${totalSchedules}">0</span>
                                 </div>
-                                <span class="info-subtext">Ví dụ: 28211...</span>
+                                <span class="info-subtext">Imported schedules</span>
                             </div>
 
                             <div class="info-block">
-                                <span class="info-label">Bước 2</span>
+                                <span class="info-label">Students</span>
                                 <div class="info-value">
-                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">manage_search</span>
-                                    Bấm tra cứu
+                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">groups</span>
+                                    <span th:text="${totalStudents}">0</span>
                                 </div>
-                                <span class="info-subtext">Hệ thống tìm trong dữ liệu lịch thi</span>
+                                <span class="info-subtext">Student records</span>
                             </div>
 
                             <div class="info-block">
-                                <span class="info-label">Bước 3</span>
+                                <span class="info-label">Documents</span>
                                 <div class="info-value">
-                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">event_available</span>
-                                    Xem lịch thi
+                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">description</span>
+                                    <span th:text="${totalDocuments}">0</span>
                                 </div>
-                                <span class="info-subtext">Ngày thi, giờ thi, phòng thi</span>
+                                <span class="info-subtext">Uploaded files</span>
                             </div>
 
                             <div class="info-block">
-                                <span class="info-label">Nhắc nhở</span>
+                                <span class="info-label">Reminder</span>
                                 <div class="info-value">
                                     <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">notifications</span>
-                                    Theo dõi lịch thi
+                                    Ready
                                 </div>
-                                <span class="info-subtext">Hạn chế quên hoặc nhầm lịch</span>
+                                <span class="info-subtext">Exam notification support</span>
                             </div>
+                        </div>
+
+                        <div class="exam-footer">
+                            <a class="btn-text" th:href="@{/user/schedules}">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">event</span>
+                                View schedules
+                            </a>
+
+                            <a class="btn-text btn-follow" th:href="@{/user/documents}">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">description</span>
+                                View documents
+                            </a>
                         </div>
                     </div>
                 </section>
+
             </main>
 
             <!-- Sidebar -->
@@ -224,16 +199,16 @@
                 <section class="card sidebar-card">
                     <div class="sidebar-card-header">
                         <span class="material-symbols-outlined">forum</span>
-                        <h3>Trợ lý AI</h3>
+                        <h3>Ask AI Assistant</h3>
                     </div>
 
                     <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
-                        Hỏi AI về lịch thi, phòng thi, cách chuẩn bị trước kỳ thi hoặc thông tin tài liệu ôn tập.
+                        Ask questions about your schedule, room locations, or exam policies.
                     </p>
 
                     <div class="ai-container">
-                        <textarea class="ai-textarea" placeholder="Ví dụ: Phòng 510 Nhà F ở đâu?"></textarea>
-                        <button class="send-btn" type="button">
+                        <textarea class="ai-textarea" placeholder="e.g. Where is Building C?"></textarea>
+                        <button class="send-btn">
                             <span class="material-symbols-outlined" style="font-size: 18px;">send</span>
                         </button>
                     </div>
@@ -243,7 +218,7 @@
                 <section class="card sidebar-card">
                     <div class="sidebar-card-header">
                         <span class="material-symbols-outlined">bookmark</span>
-                        <h3>Lịch đã theo dõi</h3>
+                        <h3>Followed Exams</h3>
                         <span class="badge-count">0</span>
                     </div>
 
@@ -253,10 +228,10 @@
                                 <span class="item-code">DTU</span>
                                 <span class="item-status">READY</span>
                             </div>
-                            <div class="item-name">Chưa có lịch thi được theo dõi</div>
+                            <div class="item-name">No followed exams yet</div>
                             <div class="item-time">
-                                <span class="material-symbols-outlined" style="font-size: 14px;">info</span>
-                                Tra cứu lịch thi để bắt đầu theo dõi
+                                <span class="material-symbols-outlined" style="font-size: 14px;">schedule</span>
+                                Search and follow an exam
                             </div>
                         </div>
                     </div>

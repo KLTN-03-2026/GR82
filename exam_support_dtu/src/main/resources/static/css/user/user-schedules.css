@@ -1,0 +1,603 @@
+/* ==========================================================================
+   TRANG LỊCH THI USER - DTU SUPPORTS
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. CSS RESET & VARIABLES
+   ========================================================================== */
+
+:root {
+    --primary: #b91c1c;
+    --primary-hover: #991b1b;
+
+    --page-bg: #f8fafc;
+    --card-surface: #ffffff;
+
+    --heading-main: #0f172a;
+    --text-body: #334155;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+
+    --border-color: #e2e8f0;
+
+    --soft-red-bg: #fef2f2;
+    --soft-red-border: #fecaca;
+
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+
+    --radius-default: 4px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    --container-max: 1280px;
+    --header-height: 64px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--page-bg);
+    color: var(--text-body);
+    min-height: 100vh;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+}
+
+
+/* ==========================================================================
+   2. TOP NAVBAR
+   ========================================================================== */
+
+.user-topbar {
+    height: var(--header-height);
+    background: var(--card-surface);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow-sm);
+}
+
+.user-topbar-inner {
+    max-width: 1440px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 100%;
+}
+
+.user-logo {
+    color: var(--primary);
+    font-family: "Public Sans", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.user-nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 100%;
+}
+
+.user-nav-link {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 8px;
+    color: var(--text-muted);
+    font-weight: 600;
+    transition: color 0.15s;
+}
+
+.user-nav-link:hover {
+    color: var(--primary);
+}
+
+.user-nav-link.active {
+    color: var(--primary);
+    font-weight: 700;
+    border-bottom: 2px solid var(--primary);
+}
+
+.user-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-icon-btn {
+    padding: 8px;
+    color: var(--text-muted);
+    border-radius: 8px;
+    background: transparent;
+    transition: all 0.15s;
+}
+
+.user-icon-btn:hover {
+    background: var(--slate-100);
+    color: var(--heading-main);
+}
+
+.user-notification-btn {
+    padding: 6px 12px;
+    color: var(--text-muted);
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+
+.user-notification-btn:hover {
+    background: var(--slate-100);
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-default);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    margin-left: 8px;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+/* ==========================================================================
+   3. MAIN LAYOUT
+   ========================================================================== */
+
+.schedule-main {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 32px 32px;
+    display: grid;
+    grid-template-columns: minmax(0, 8fr) minmax(320px, 4fr);
+    gap: 24px;
+}
+
+.schedule-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.schedule-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.schedule-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.schedule-page-title {
+    font-family: "Public Sans", sans-serif;
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--heading-main);
+}
+
+
+/* ==========================================================================
+   4. EXAM CARD
+   ========================================================================== */
+
+.exam-card {
+    background: var(--card-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.exam-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.exam-course-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.exam-course-code {
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 400;
+    background: var(--soft-red-bg);
+    border: 1px solid var(--soft-red-border);
+    color: var(--primary);
+    padding: 4px 8px;
+    border-radius: var(--radius-default);
+}
+
+.exam-credit-badge {
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.exam-title {
+    font-family: "Public Sans", sans-serif;
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+    color: var(--heading-main);
+}
+
+.exam-semester {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 20px;
+    margin-top: 4px;
+}
+
+.exam-date-box {
+    background: var(--soft-red-bg);
+    border: 1px solid var(--soft-red-border);
+    border-radius: var(--radius-lg);
+    padding: 8px 12px;
+    text-align: center;
+}
+
+.exam-date-label {
+    color: var(--primary);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.exam-date-day {
+    font-family: "Public Sans", sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: 4px;
+}
+
+.exam-date-month {
+    color: var(--primary);
+    font-size: 14px;
+    line-height: 20px;
+}
+
+
+/* ==========================================================================
+   5. EXAM INFO GRID
+   ========================================================================== */
+
+.exam-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.exam-info-label {
+    color: var(--text-faint);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.exam-info-value {
+    color: var(--text-body);
+    font-size: 14px;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.exam-info-value strong {
+    font-weight: 600;
+}
+
+.exam-info-value .material-symbols-outlined {
+    color: var(--text-muted);
+    font-size: 16px;
+}
+
+
+/* ==========================================================================
+   6. NOTE BOX
+   ========================================================================== */
+
+.exam-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    background: var(--soft-red-bg);
+    border: 1px solid var(--soft-red-border);
+    padding: 12px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.exam-note .material-symbols-outlined {
+    font-size: 18px;
+}
+
+
+/* ==========================================================================
+   7. BUTTONS
+   ========================================================================== */
+
+.exam-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: var(--radius-default);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.btn-outline {
+    background: var(--card-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-body);
+}
+
+.btn-outline:hover {
+    background: var(--slate-50);
+}
+
+.btn-outline .material-symbols-outlined {
+    color: var(--text-muted);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+
+/* ==========================================================================
+   8. SEARCH SIDEBAR
+   ========================================================================== */
+
+.lookup-card {
+    background: var(--card-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    position: sticky;
+    top: 88px;
+    box-shadow: var(--shadow-sm);
+}
+
+.lookup-title {
+    font-family: "Public Sans", sans-serif;
+    color: var(--heading-main);
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.lookup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.lookup-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lookup-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.lookup-control {
+    width: 100%;
+    background: var(--card-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-default);
+    padding: 8px 12px;
+    color: var(--text-body);
+    font-size: 14px;
+    line-height: 20px;
+    transition: all 0.15s;
+}
+
+.lookup-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.lookup-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.lookup-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: var(--radius-default);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    box-shadow: var(--shadow-sm);
+}
+
+.lookup-btn .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.lookup-btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.lookup-btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.lookup-btn-outline {
+    background: var(--card-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-body);
+}
+
+.lookup-btn-outline:hover {
+    background: var(--slate-50);
+}
+
+.lookup-btn-outline .material-symbols-outlined {
+    color: var(--text-muted);
+}
+
+
+/* ==========================================================================
+   9. RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    .schedule-main {
+        grid-template-columns: 1fr;
+    }
+
+    .lookup-card {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .user-nav {
+        display: none;
+    }
+
+    .schedule-main {
+        padding: 24px 16px;
+    }
+
+    .exam-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .exam-actions {
+        flex-direction: column;
+    }
+
+    .btn,
+    .lookup-btn {
+        width: 100%;
+    }
+}

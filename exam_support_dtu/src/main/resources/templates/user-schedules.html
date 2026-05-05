@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>DTU Supports - Lịch Thi</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+    <link rel="stylesheet" th:href="@{/css/user/user-schedules.css}" href="/css/user/user-schedules.css">
+</head>
+
+<body>
+<!-- TopNavBar -->
+<header class="user-topbar">
+    <div class="user-topbar-inner">
+        <div class="user-topbar-left">
+            <div class="user-logo">DTU Supports</div>
+
+            <nav class="user-nav">
+                <a class="user-nav-link" th:href="@{/}">Trang chủ</a>
+                <a class="user-nav-link active" th:href="@{/user/schedules}">Lịch thi</a>
+                <a class="user-nav-link" th:href="@{/user/documents}">Tài liệu</a>
+            </nav>
+        </div>
+
+        <div class="user-topbar-right">
+            <button class="user-icon-btn" title="Help">
+                <span class="material-symbols-outlined">help</span>
+            </button>
+
+            <button class="user-icon-btn" title="Settings">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+
+            <button class="user-notification-btn">Notifications</button>
+
+            <div class="user-avatar">
+                <span class="material-symbols-outlined" style="font-size: 30px; color: #64748b;">account_circle</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main Layout -->
+<main class="schedule-main">
+
+    <!-- Left Content Area -->
+    <section class="schedule-content">
+        <header class="schedule-page-header">
+            <h1 class="schedule-page-title">Upcoming Examinations</h1>
+        </header>
+
+        <!-- Khi có kết quả tra cứu theo mã sinh viên -->
+        <div th:if="${examResults != null and !examResults.isEmpty()}">
+            <article class="exam-card" th:each="exam : ${examResults}">
+                <div class="exam-card-header">
+                    <div>
+                        <div class="exam-course-meta">
+                            <span class="exam-course-code" th:text="${exam.courseCode != null ? exam.courseCode : 'N/A'}">
+                                CS301
+                            </span>
+
+                            <span class="exam-credit-badge">
+                                <span th:text="${exam.credit != null ? exam.credit : 'N/A'}">3</span>
+                                Credits
+                            </span>
+                        </div>
+
+                        <h2 class="exam-title" th:text="${exam.courseName != null ? exam.courseName : 'Chưa cập nhật tên môn'}">
+                            Data Structures
+                        </h2>
+
+                        <p class="exam-semester">
+                            Semester:
+                            <span th:text="${exam.semester != null ? exam.semester : 'Chưa cập nhật'}">
+                                Fall 2023
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="exam-date-box">
+                        <div class="exam-date-label">Date</div>
+
+                        <div class="exam-date-day"
+                             th:text="${exam.examDate != null ? #temporals.format(exam.examDate, 'dd') : '--'}">
+                            15
+                        </div>
+
+                        <div class="exam-date-month"
+                             th:text="${exam.examDate != null ? #temporals.format(exam.examDate, 'MMM') : 'N/A'}">
+                            Nov
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exam-info-grid">
+                    <div>
+                        <div class="exam-info-label">Time</div>
+                        <div class="exam-info-value">
+                            <span class="material-symbols-outlined">schedule</span>
+                            <span th:text="${exam.examTime != null ? exam.examTime : 'Chưa cập nhật'}">
+                                08:00 - 10:00
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="exam-info-label">Location</div>
+                        <div class="exam-info-value">
+                            <span class="material-symbols-outlined">location_on</span>
+                            <span th:text="${exam.roomName != null ? exam.roomName : 'Chưa cập nhật phòng'}">
+                                R.302, Bldg. A
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="exam-info-label">Class Code</div>
+                        <div class="exam-info-value" th:text="${exam.classCode != null ? exam.classCode : 'N/A'}">
+                            CS301 A
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="exam-info-label">Seat</div>
+                        <div class="exam-info-value">
+                            <strong th:text="${exam.seatNumber != null ? exam.seatNumber : 'N/A'}">45</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exam-note">
+                    <span class="material-symbols-outlined">info</span>
+                    <span>
+                        Địa điểm:
+                        <span th:text="${exam.location != null ? exam.location : 'Chưa cập nhật địa điểm'}">
+                            Main Campus
+                        </span>
+                        <span th:if="${exam.note != null and !exam.note.isEmpty()}">
+                            -
+                            <span th:text="${exam.note}">Ghi chú</span>
+                        </span>
+                    </span>
+                </div>
+
+                <div class="exam-actions">
+                    <button class="btn btn-outline" type="button">
+                        View Detail
+                    </button>
+
+                    <button class="btn btn-outline" type="button">
+                        <span class="material-symbols-outlined">bookmark_add</span>
+                        Follow Exam
+                    </button>
+
+                    <button class="btn btn-primary" type="button">
+                        <span class="material-symbols-outlined">smart_toy</span>
+                        Ask AI
+                    </button>
+                </div>
+            </article>
+        </div>
+
+        <!-- Nếu chưa nhập mã sinh viên hoặc không có kết quả tra cứu, hiển thị lịch tổng quát -->
+        <div th:if="${(examResults == null or examResults.isEmpty()) and schedulePage != null}">
+            <article class="exam-card" th:each="schedule : ${schedulePage.content}">
+                <div class="exam-card-header">
+                    <div>
+                        <div class="exam-course-meta">
+                            <span class="exam-course-code" th:text="${schedule.courseCode != null ? schedule.courseCode : 'N/A'}">
+                                CS301
+                            </span>
+
+                            <span class="exam-credit-badge">
+                                <span th:text="${schedule.credit != null ? schedule.credit : 'N/A'}">3</span>
+                                Credits
+                            </span>
+                        </div>
+
+                        <h2 class="exam-title" th:text="${schedule.courseName != null ? schedule.courseName : 'Chưa cập nhật tên môn'}">
+                            Data Structures
+                        </h2>
+
+                        <p class="exam-semester">
+                            Semester:
+                            <span th:text="${schedule.semester != null ? schedule.semester : 'Chưa cập nhật'}">
+                                Fall 2023
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="exam-date-box">
+                        <div class="exam-date-label">Rooms</div>
+                        <div class="exam-date-day" th:text="${schedule.rooms != null ? schedule.rooms.size() : 0}">
+                            2
+                        </div>
+                        <div class="exam-date-month">Room</div>
+                    </div>
+                </div>
+
+                <div class="exam-info-grid">
+                    <div>
+                        <div class="exam-info-label">Attempt</div>
+                        <div class="exam-info-value">
+                            <span class="material-symbols-outlined">restart_alt</span>
+                            <span th:text="${schedule.attempt != null ? schedule.attempt : 'N/A'}">1</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="exam-info-label">Students</div>
+                        <div class="exam-info-value">
+                            <span class="material-symbols-outlined">groups</span>
+                            <span th:text="${schedule.totalStudents != null ? schedule.totalStudents : 'N/A'}">120</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="exam-info-label">Parsed At</div>
+                        <div class="exam-info-value">
+                            <span class="material-symbols-outlined">event</span>
+                            <span th:text="${schedule.parsedAt != null ? #temporals.format(schedule.parsedAt, 'dd/MM/yyyy') : 'N/A'}">
+                                01/01/2026
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="exam-info-label">Course Code</div>
+                        <div class="exam-info-value" th:text="${schedule.courseCode != null ? schedule.courseCode : 'N/A'}">
+                            CS301
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exam-note">
+                    <span class="material-symbols-outlined">info</span>
+                    <span th:text="${schedule.notes != null ? schedule.notes : 'Nhập mã sinh viên ở khung bên phải để xem chính xác phòng thi, số báo danh và ca thi của bạn.'}">
+                        Nhập mã sinh viên ở khung bên phải để xem chính xác phòng thi.
+                    </span>
+                </div>
+
+                <div class="exam-actions">
+                    <button class="btn btn-outline" type="button">
+                        View Detail
+                    </button>
+
+                    <button class="btn btn-primary" type="button">
+                        <span class="material-symbols-outlined">smart_toy</span>
+                        Ask AI
+                    </button>
+                </div>
+            </article>
+
+            <!-- Pagination đơn giản -->
+            <div class="exam-actions" th:if="${schedulePage.totalPages > 1}">
+                <a class="btn btn-outline"
+                   th:if="${schedulePage.hasPrevious()}"
+                   th:href="@{/user/schedules(page=${schedulePage.number - 1}, size=${schedulePage.size})}">
+                    Previous
+                </a>
+
+                <span class="btn btn-outline">
+                    Page <span th:text="${schedulePage.number + 1}">1</span>
+                    /
+                    <span th:text="${schedulePage.totalPages}">1</span>
+                </span>
+
+                <a class="btn btn-outline"
+                   th:if="${schedulePage.hasNext()}"
+                   th:href="@{/user/schedules(page=${schedulePage.number + 1}, size=${schedulePage.size})}">
+                    Next
+                </a>
+            </div>
+        </div>
+
+        <!-- Không có dữ liệu -->
+        <article class="exam-card"
+                 th:if="${(examResults == null or examResults.isEmpty()) and schedulePage == null}">
+            <div class="exam-note">
+                <span class="material-symbols-outlined">info</span>
+                <span>Chưa có dữ liệu lịch thi để hiển thị.</span>
+            </div>
+        </article>
+    </section>
+
+    <!-- Right Sidebar -->
+    <aside class="schedule-sidebar">
+        <div class="lookup-card">
+            <h3 class="lookup-title">Schedule Lookup</h3>
+
+            <form class="lookup-form" th:action="@{/user/schedules}" method="get">
+                <div class="lookup-form-group">
+                    <label class="lookup-label" for="studentCode">Student Code</label>
+                    <input class="lookup-control"
+                           id="studentCode"
+                           name="studentCode"
+                           placeholder="Enter ID..."
+                           type="text"
+                           th:value="${studentCode}"/>
+                </div>
+
+                <div class="lookup-form-group">
+                    <label class="lookup-label" for="semester">Semester</label>
+                    <select class="lookup-control" id="semester" name="semester">
+                        <option value="">Tất cả học kỳ</option>
+                        <option value="Fall 2023" th:selected="${semester == 'Fall 2023'}">Fall 2023</option>
+                        <option value="Spring 2024" th:selected="${semester == 'Spring 2024'}">Spring 2024</option>
+                        <option value="Summer 2024" th:selected="${semester == 'Summer 2024'}">Summer 2024</option>
+                    </select>
+                </div>
+
+                <div class="lookup-form-group">
+                    <label class="lookup-label" for="courseFilter">Course Filter</label>
+                    <input class="lookup-control"
+                           id="courseFilter"
+                           name="courseFilter"
+                           placeholder="e.g. CS301..."
+                           type="text"
+                           th:value="${courseFilter}"/>
+                </div>
+
+                <div class="lookup-actions">
+                    <button class="lookup-btn lookup-btn-primary" type="submit">
+                        <span class="material-symbols-outlined">search</span>
+                        Search Schedule
+                    </button>
+
+                    <button class="lookup-btn lookup-btn-outline" type="button">
+                        <span class="material-symbols-outlined">smart_toy</span>
+                        Ask AI Assistant
+                    </button>
+                </div>
+            </form>
+        </div>
+    </aside>
+</main>
+</body>
+</html>
