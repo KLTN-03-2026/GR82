@@ -1,32 +1,219 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra Cứu Lịch Thi - DTU</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
+<html th:replace="~{user-layout :: user_layout(~{::#user-content}, '/css/user/user-home.css', 'home')}"
+    xmlns:th="http://www.thymeleaf.org">
+
 <body>
+    <div class="page-wrapper">
+        <!-- TopAppBar -->
+        <header class="topbar">
+            <div class="container topbar-content">
+                <div class="topbar-left">
+                    <div class="logo">DTU Supports</div>
 
-<div class="search-container">
-    <div class="logo-area">
-        <h1>Tra Cứu Lịch Thi</h1>
-        <p>Hệ thống hỗ trợ tra cứu lịch thi nhanh chóng</p>
-    </div>
+                    <nav class="nav-links">
+                        <a class="nav-item active" th:href="@{/user/home}">Trang chủ</a>
+                        <a class="nav-item" th:href="@{/user/schedules}">Lịch thi</a>
+                        <a class="nav-item" th:href="@{/user/documents}">Tài liệu</a>
+                    </nav>
+                </div>
+                <div class="topbar-right">
+                    <button class="icon-btn" title="Trợ giúp" type="button">
+                        <span class="material-symbols-outlined">help</span>
+                    </button>
 
-    <form th:action="@{/search}" method="get" class="search-form">
-        <div class="input-group">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input type="text"
-                   name="studentCode"
-                   placeholder="Nhập mã sinh viên của bạn (VD: 28211...)"
-                   required
-                   autocomplete="off">
-            <button type="submit">Tra cứu ngay</button>
+                    <button class="icon-btn" title="Cài đặt" type="button">
+                        <span class="material-symbols-outlined">settings</span>
+                    </button>
+
+                    <button class="notif-text" type="button">Thông báo</button>
+
+                    <div class="user-profile">
+                        <span class="material-symbols-outlined"
+                            style="font-size: 28px; color: #64748b;">account_circle</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div id="user-content" class="container">
+            <div class="main-layout">
+
+                <!-- Main -->
+                <main class="content-area">
+
+                    <!-- Search Section -->
+                    <section class="card search-section">
+                        <h1 class="section-title">Tra cứu lịch thi</h1>
+                        <p class="section-subtitle">
+                            Nhập mã sinh viên để tra cứu lịch thi mới nhất từ hệ thống DTU Supports.
+                        </p>
+
+                        <form th:action="@{/user/schedules}" method="get" class="search-form">
+                            <div class="form-group">
+                                <label class="label" for="studentCode">Mã sinh viên</label>
+                                <input id="studentCode" class="input-control" type="text" name="studentCode"
+                                    placeholder="Ví dụ: 28211..." th:value="${studentCode}" required autocomplete="off">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="label" for="semester">Học kỳ</label>
+                                <select id="semester" class="input-control" name="semester">
+                                    <option value="">Tất cả học kỳ</option>
+                                    <option value="Spring 2024" th:selected="${semester == 'Spring 2024'}">Spring 2024
+                                    </option>
+                                    <option value="Fall 2023" th:selected="${semester == 'Fall 2023'}">Fall 2023
+                                    </option>
+                                    <option value="Summer 2024" th:selected="${semester == 'Summer 2024'}">Summer 2024
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="label" for="courseFilter">Môn học</label>
+                                <input id="courseFilter" class="input-control" type="text" name="courseFilter"
+                                    placeholder="Nhập mã môn hoặc tên môn" th:value="${courseFilter}"
+                                    autocomplete="off">
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-primary" type="submit">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">search</span>
+                                    Tra cứu
+                                </button>
+
+                                <button class="btn btn-secondary" type="button">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">forum</span>
+                                    Hỏi AI
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!-- Student Summary Placeholder -->
+                    <section class="card student-summary">
+                        <div class="avatar-initials">DTU</div>
+
+                        <div class="student-info">
+                            <h2>DTU Supports</h2>
+                            <p>Tra cứu lịch thi nhanh chóng, chính xác và thuận tiện.</p>
+                        </div>
+
+                        <div class="status-badge">
+                            <span class="dot"></span>
+                            <span class="status-text">Hệ thống hoạt động tốt</span>
+                        </div>
+                    </section>
+
+                    <!-- Intro Section -->
+                    <section class="results-container">
+                        <div class="results-header">
+                            <h2>Hướng dẫn sử dụng</h2>
+                            <span class="results-count">3 bước đơn giản</span>
+                        </div>
+
+                        <div class="card exam-card">
+                            <div class="exam-header">
+                                <div style="display: flex; align-items: center;">
+                                    <span class="course-tag">BƯỚC 1</span>
+                                    <h3 class="course-title">Nhập mã sinh viên</h3>
+                                </div>
+                                <span class="credit-badge">Bắt buộc</span>
+                            </div>
+
+                            <div class="exam-body">
+                                <div class="info-block">
+                                    <span class="info-label">Bước 1</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">badge</span>
+                                        Nhập mã sinh viên
+                                    </div>
+                                    <span class="info-subtext">Ví dụ: 28211...</span>
+                                </div>
+
+                                <div class="info-block">
+                                    <span class="info-label">Bước 2</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">manage_search</span>
+                                        Bấm tra cứu
+                                    </div>
+                                    <span class="info-subtext">Hệ thống tìm trong dữ liệu lịch thi</span>
+                                </div>
+
+                                <div class="info-block">
+                                    <span class="info-label">Bước 3</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">event_available</span>
+                                        Xem lịch thi
+                                    </div>
+                                    <span class="info-subtext">Ngày thi, giờ thi, phòng thi</span>
+                                </div>
+
+                                <div class="info-block">
+                                    <span class="info-label">Nhắc nhở</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">notifications</span>
+                                        Theo dõi lịch thi
+                                    </div>
+                                    <span class="info-subtext">Hạn chế quên hoặc nhầm lịch</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+
+                <!-- Sidebar -->
+                <aside class="sidebar-area">
+
+                    <!-- AI Assistant -->
+                    <section class="card sidebar-card">
+                        <div class="sidebar-card-header">
+                            <span class="material-symbols-outlined">forum</span>
+                            <h3>Trợ lý AI</h3>
+                        </div>
+
+                        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                            Hỏi AI về lịch thi, phòng thi, cách chuẩn bị trước kỳ thi hoặc thông tin tài liệu ôn tập.
+                        </p>
+
+                        <div class="ai-container">
+                            <textarea class="ai-textarea" placeholder="Ví dụ: Phòng 510 Nhà F ở đâu?"></textarea>
+                            <button class="send-btn" type="button">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">send</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Followed Exams -->
+                    <section class="card sidebar-card">
+                        <div class="sidebar-card-header">
+                            <span class="material-symbols-outlined">bookmark</span>
+                            <h3>Lịch đã theo dõi</h3>
+                            <span class="badge-count">0</span>
+                        </div>
+
+                        <div class="followed-list">
+                            <div class="followed-item">
+                                <div class="item-top">
+                                    <span class="item-code">DTU</span>
+                                    <span class="item-status">READY</span>
+                                </div>
+                                <div class="item-name">Chưa có lịch thi được theo dõi</div>
+                                <div class="item-time">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">info</span>
+                                    Tra cứu lịch thi để bắt đầu theo dõi
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                </aside>
+            </div>
         </div>
-    </form>
-</div>
-
 </body>
+
 </html>

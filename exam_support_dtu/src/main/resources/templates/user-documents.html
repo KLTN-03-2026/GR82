@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html th:replace="~{user-layout :: user_layout(~{::#documents-content}, '/css/user/user-documents.css', 'documents')}"
+    xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div id="documents-content">
+
+        <main class="documents-main">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <h1 class="hero-title">Tài liệu học tập &amp; ôn thi</h1>
+                <p class="hero-subtitle">
+                    Kho tài liệu cộng đồng đóng góp giúp bạn chinh phục mọi kỳ thi.
+                </p>
+            </section>
+
+            <!-- Search & Filter Area -->
+            <section class="filter-section">
+                <div class="filter-group filter-search">
+                    <label class="filter-label">Tìm kiếm tài liệu</label>
+                    <div class="search-input-wrapper">
+                        <span class="material-symbols-outlined">search</span>
+                        <input class="filter-control search-control" placeholder="Nhập tên môn học, mã học phần..."
+                            type="text" />
+                    </div>
+                </div>
+
+                <div class="filter-group filter-select">
+                    <label class="filter-label">Loại tài liệu</label>
+                    <select class="filter-control">
+                        <option>Tất cả</option>
+                        <option>PDF</option>
+                        <option>DOCX</option>
+                        <option>XLSX</option>
+                        <option>Khác</option>
+                    </select>
+                </div>
+
+                <button class="filter-btn" type="button">
+                    <span class="material-symbols-outlined">filter_list</span>
+                    Lọc
+                </button>
+            </section>
+
+            <div class="academic-grid">
+                <!-- Document List -->
+                <section class="document-list">
+
+                    <!-- Nếu có dữ liệu tài liệu đã duyệt -->
+                    <th:block th:if="${docPage != null and !docPage.content.isEmpty()}">
+                        <article class="document-card" th:each="doc : ${docPage.content}">
+                            <div class="document-card-inner">
+
+                                <!-- Icon PDF -->
+                                <div class="document-icon-box document-icon-pdf"
+                                    th:if="${doc.fileType != null and #strings.equalsIgnoreCase(doc.fileType, 'PDF')}">
+                                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                                </div>
+
+                                <!-- Icon non-PDF -->
+                                <div class="document-icon-box document-icon-doc"
+                                    th:unless="${doc.fileType != null and #strings.equalsIgnoreCase(doc.fileType, 'PDF')}">
+                                    <span class="material-symbols-outlined">description</span>
+                                </div>
+
+                                <div class="document-content">
+                                    <div class="document-title-row">
+                                        <h3 class="document-title" th:text="${doc.title}">Tên tài liệu</h3>
+                                        <span class="document-type-badge"
+                                            th:text="${doc.fileType != null ? doc.fileType : 'FILE'}">PDF</span>
+                                    </div>
+
+                                    <div class="document-meta-grid">
+                                        <div class="document-meta-item"
+                                            th:if="${doc.courseCode != null and !#strings.isEmpty(doc.courseCode)}">
+                                            <span class="material-symbols-outlined">menu_book</span>
+                                            <span th:text="${doc.courseCode}">CS311</span>
+                                        </div>
+
+                                        <div class="document-meta-item">
+                                            <span class="material-symbols-outlined">event</span>
+                                            <span
+                                                th:text="${doc.createdAt != null ? #temporals.format(doc.createdAt, 'dd/MM/yyyy') : 'Chưa cập nhật'}">
+                                                15/05/2024
+                                            </span>
+                                        </div>
+
+                                        <div class="document-meta-item">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                            <span th:text="${doc.views != null ? doc.views : 0}">0</span> lượt xem
+                                        </div>
+
+                                        <div class="document-meta-item">
+                                            <span class="material-symbols-outlined">download</span>
+                                            <span th:text="${doc.downloads != null ? doc.downloads : 0}">0</span> lượt
+                                            tải
+                                        </div>
+                                    </div>
+
+                                    <div class="document-actions">
+                                        <a class="document-btn document-btn-outline"
+                                            th:href="@{/api/user/documents/view/{id}(id=${doc.id})}" target="_blank">Xem
+                                            chi tiết</a>
+
+                                        <a class="document-btn document-btn-outline"
+                                            th:href="@{/api/user/documents/download/{id}(id=${doc.id})}">
+                                            <span class="material-symbols-outlined">download</span>
+                                            Tải xuống
+                                        </a>
+
+                                        <button class="document-btn document-btn-primary" type="button">
+                                            <span class="material-symbols-outlined">psychology</span>
+                                            Hỏi AI
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </th:block>
+
+                    <!-- Nếu không có dữ liệu -->
+                    <th:block th:if="${docPage == null or docPage.content.isEmpty()}">
+                        <article class="document-card">
+                            <div class="document-card-inner">
+                                <div class="document-icon-box document-icon-doc">
+                                    <span class="material-symbols-outlined">info</span>
+                                </div>
+                                <div class="document-content">
+                                    <div class="document-title-row">
+                                        <h3 class="document-title">Chưa có tài liệu</h3>
+                                        <span class="document-type-badge">EMPTY</span>
+                                    </div>
+                                    <div class="document-meta-grid">
+                                        <div class="document-meta-item">
+                                            <span class="material-symbols-outlined">info</span>
+                                            Hiện chưa có tài liệu nào được phê duyệt.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </th:block>
+
+                    <!-- Pagination -->
+                    <div class="document-actions" th:if="${docPage != null and docPage.totalPages > 1}">
+                        <a class="document-btn document-btn-outline" th:if="${docPage.hasPrevious()}"
+                            th:href="@{/user/documents(page=${docPage.number - 1}, size=${docPage.size})}">
+                            Trang trước
+                        </a>
+
+                        <span class="document-btn document-btn-outline">
+                            Trang <span th:text="${docPage.number + 1}">1</span>
+                            / <span th:text="${docPage.totalPages}">1</span>
+                        </span>
+
+                        <a class="document-btn document-btn-outline" th:if="${docPage.hasNext()}"
+                            th:href="@{/user/documents(page=${docPage.number + 1}, size=${docPage.size})}">
+                            Trang sau
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Right Sidebar -->
+                <aside class="documents-sidebar">
+                    <!-- AI Assistant Card -->
+                    <section class="ai-card">
+                        <div class="ai-card-header">
+                            <div class="ai-card-title">
+                                <span class="material-symbols-outlined">smart_toy</span>
+                                <h4>Hỏi AI Assistant</h4>
+                            </div>
+                        </div>
+                        <div class="ai-card-body">
+                            <p class="ai-card-description">
+                                Sử dụng AI để tóm tắt nội dung tài liệu hoặc giải thích các khái niệm khó.
+                            </p>
+                            <div class="ai-suggestion-list">
+                                <button class="ai-suggestion-btn" type="button">Tóm tắt đề cương</button>
+                                <button class="ai-suggestion-btn" type="button">Giải bài tập CTDL</button>
+                                <button class="ai-suggestion-btn" type="button">Lộ trình ôn tập</button>
+                            </div>
+                            <div class="ai-input-wrapper">
+                                <input class="ai-input" placeholder="Hỏi AI về tài liệu..." type="text" />
+                                <button class="ai-send-btn" type="button">
+                                    <span class="material-symbols-outlined">send</span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Recent Documents -->
+                    <section class="recent-card">
+                        <div class="recent-card-header">
+                            <h4>Tài liệu gần đây</h4>
+                            <span class="material-symbols-outlined">history</span>
+                        </div>
+                        <ul class="recent-list" th:if="${docPage != null and !docPage.content.isEmpty()}">
+                            <th:block th:each="doc, iterStat : ${docPage.content}" th:if="${iterStat.index < 3}">
+                                <li>
+                                    <a class="recent-link" th:href="@{/api/user/documents/view/{id}(id=${doc.id})}"
+                                        target="_blank">
+                                        <span class="material-symbols-outlined">description</span>
+                                        <div class="recent-text">
+                                            <p class="recent-title" th:text="${doc.title}">Tên tài liệu</p>
+                                            <p class="recent-time">
+                                                <span
+                                                    th:text="${doc.createdAt != null ? #temporals.format(doc.createdAt, 'dd/MM/yyyy') : 'Chưa cập nhật'}">
+                                                    15/05/2024
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </a>
+                                </li>
+                            </th:block>
+                        </ul>
+                        <p th:if="${docPage == null or docPage.content.isEmpty()}"
+                            style="font-size:13px; color:#94a3b8; padding: 12px 0;">
+                            Chưa có tài liệu nào.
+                        </p>
+                    </section>
+
+                    <!-- Promo Banner -->
+                    <section class="study-banner">
+                        <img alt="Academic Library"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKOIC61RXQ37Laci9XR_EwSVMd4JaqYXy52tGVjPCA6bwze0ICumWDL5jXHnqRcqWAwtHjvdgLXgqDU49KvKbzerLlosafrBZpy4BKVIZVWcqjsHAU2IlaKlvF8lu95Lc1FVbATZfBCbF6M97A8AkFCumOrDaiwLglUHIkz4-08dixvnyJTuBWeSUzQ3h3Zlzq_3Gc4EIU-95C1vssqt0AmGV4QpmDZ6g1XiF-rr75sVPuKw8VR_QMYAPATEBztG91MvruXJc1qMs" />
+                        <div class="study-banner-overlay">
+                            <p class="study-banner-label">Mẹo học tập</p>
+                            <p class="study-banner-title">
+                                Khám phá cách ghi chú hiệu quả bằng phương pháp Cornell.
+                            </p>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </main>
+
+    </div>
+</body>
+
+</html>

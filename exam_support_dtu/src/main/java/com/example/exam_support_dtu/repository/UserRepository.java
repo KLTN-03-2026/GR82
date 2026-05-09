@@ -16,6 +16,7 @@ public interface UserRepository extends JpaRepository<Users, Long> {
 
     // Đếm số user đăng ký mới (sau một mốc thời gian nào đó)
     long countByCreatedAtAfter(OffsetDateTime date);
+    long countByCreatedAtBetween(OffsetDateTime start, OffsetDateTime end);
 
     // kiểm tra xem Email
     boolean existsByEmail(String email);

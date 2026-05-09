@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html th:replace="~{admin-layout :: admin_layout(~{::#settings-content}, '/css/admin-settings.css')}"
+    xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+    <div id="settings-content" class="fade-in">
+        <div class="settings-header">
+            <div class="header-title">
+                <i class="fa-solid fa-gears text-red"></i>
+                <div>
+                    <h2>Cấu Hình Hệ Thống</h2>
+                    <p>Quản lý các thông số vận hành tự động (Auto-Tasks)</p>
+                </div>
+            </div>
+            <button id="btnSaveAll" class="btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Lưu Tất Cả Thay Đổi
+            </button>
+        </div>
+
+        <div class="settings-grid">
+            <!-- CẤU HÌNH EMAIL -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                    <span>Cấu Hình Email & Thông Báo</span>
+                </div>
+                <div class="card-body">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Bật Tự Động Gửi Mail</label>
+                            <p>Cho phép hệ thống tự động quét và gửi mail nhắc nhở hàng ngày.</p>
+                        </div>
+                        <div class="setting-control">
+                            <label class="switch">
+                                <input type="checkbox" id="mail_auto_enabled"
+                                    th:checked="${mail_auto_enabled == 'true'}">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Số Ngày Báo Trước (Mặc định)</label>
+                            <p>Số ngày nhắc nhở trước khi kỳ thi bắt đầu.</p>
+                        </div>
+                        <div class="setting-control">
+                            <div class="number-input">
+                                <input type="number" id="mail_default_notify_days"
+                                    th:value="${mail_default_notify_days}" min="1" max="30">
+                                <span>ngày</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Lịch Chạy (Cron Expression)</label>
+                            <p>Thời điểm gửi mail hàng ngày. Mặc định: 06:00 sáng.</p>
+                        </div>
+                        <div class="setting-control">
+                            <input type="text" id="mail_cron" th:value="${mail_cron}" class="form-control-cron">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CẤU HÌNH CRAWLER -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <i class="fa-solid fa-spider"></i>
+                    <span>Cấu Hình Robot Cào Dữ Liệu</span>
+                </div>
+                <div class="card-body">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Số Trang Quét Tự Động</label>
+                            <p>Số lượng trang đầu tiên hệ thống sẽ quét mỗi đêm tại trang pdaotao.</p>
+                        </div>
+                        <div class="setting-control">
+                            <div class="number-input">
+                                <input type="number" id="crawl_auto_pages" th:value="${crawl_auto_pages}" min="1"
+                                    max="50">
+                                <span>trang</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Lịch Chạy (Cron Expression)</label>
+                            <p>Thời điểm Robot bắt đầu làm việc. Mặc định: 02:00 sáng.</p>
+                        </div>
+                        <div class="setting-control">
+                            <input type="text" id="crawl_cron" th:value="${crawl_cron}" class="form-control-cron">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- THÔNG TIN HỆ THỐNG -->
+            <div class="settings-card full-width">
+                <div class="card-header">
+                    <i class="fa-solid fa-server"></i>
+                    <span>Trạng Thái Vận Hành</span>
+                </div>
+                <div class="card-body status-grid">
+                    <div class="status-item">
+                        <span class="status-label">Phiên bản Engine</span>
+                        <span class="status-value">v2.5.0-Stable</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Lần cào cuối</span>
+                        <span class="status-value">Hôm nay, 02:00</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Mail chờ gửi</span>
+                        <span class="status-value text-orange">12 bản ghi</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Database Status</span>
+                        <span class="status-value text-green">Connected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const btnSaveAll = document.getElementById('btnSaveAll');
+                if (btnSaveAll) {
+                    btnSaveAll.addEventListener('click', function () {
+                        const payload = {
+                            "mail.auto_enabled": document.getElementById('mail_auto_enabled').checked.toString(),
+                            "mail.default_notify_days": document.getElementById('mail_default_notify_days').value,
+                            "crawl.auto_pages": document.getElementById('crawl_auto_pages').value,
+                            "crawl.cron": document.getElementById('crawl_cron').value,
+                            "mail.cron": document.getElementById('mail_cron').value
+                        };
+
+                        const btn = this;
+                        const originalHtml = btn.innerHTML;
+                        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang lưu...';
+                        btn.disabled = true;
+
+                        fetch('/admin/settings/save', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                alert(data.message);
+                                window.location.reload();
+                            })
+                            .catch(err => {
+                                alert("Lỗi: " + err.message);
+                                btn.innerHTML = originalHtml;
+                                btn.disabled = false;
+                            });
+                    });
+                }
+            });
+        </script>
+    </div>
+
+</body>
+
+</html>

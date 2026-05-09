@@ -14,6 +14,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.exam_support_dtu.service.EmailService;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
@@ -76,17 +78,23 @@ public class RegisterController {
 
         // GỬI MAIL CHỨA MÃ OTP
         try {
-            String subject = "Mã xác thực tài khoản DTU";
-            String body = "<h3>Xin chào " + fullName + "</h3>"
-                    + "<p>Mã xác thực (OTP) của bạn là:</p>"
-                    + "<h1 style='color: #b91c1c; letter-spacing: 5px;'>" + otpCode + "</h1>"
-                    + "<p>Mã này có hiệu lực trong 1 giờ. Vui lòng không chia sẻ cho người khác.</p>";
+            // 1. Chuẩn bị dữ liệu để đắp vào các biến [FULL_NAME] và [OTP_CODE]
+            Map<String, String> templateVariables = new HashMap<>();
+            templateVariables.put("FULL_NAME", fullName);
+            templateVariables.put("OTP_CODE", otpCode);
 
-            emailService.sendHtmlEmail(email, subject, body);
+            // 2. Gọi EmailService gửi đi
+            boolean isSent = emailService.sendEmailUsingTemplate(email, "OTP_REGISTER", templateVariables);
 
-            // THAY ĐỔI LỚN NHẤT CHỖ NÀY: Chuyển hướng sang trang nhập OTP và truyền theo email
-            redirectAttributes.addAttribute("email", email);
-            return "redirect:/verify-otp";
+            if (isSent) {
+                // Nếu gửi thành công -> Sang trang nhập OTP
+                redirectAttributes.addAttribute("email", email);
+                return "redirect:/verify-otp";
+            } else {
+                // Nếu hàm send trả về false (do chưa tạo Template hoặc sai Code)
+                redirectAttributes.addAttribute("error", "Hệ thống chưa cấu hình mẫu Email OTP_REGISTER!");
+                return "redirect:/register";
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -101,7 +109,7 @@ public class RegisterController {
     @GetMapping("/verify-otp")
     public String showOtpPage(@RequestParam(value = "email", required = false) String email, Model model) {
         if (email == null || email.isEmpty()) {
-            return "redirect:/login"; // Tránh ai đó tự gõ URL /verify-otp vào trình duyệt
+            return "redirect:/login";
         }
         model.addAttribute("email", email);
         return "verify-otp";
@@ -184,16 +192,20 @@ public class RegisterController {
 
         // 3. Gửi lại Email
         try {
-            String subject = "Mã xác thực tài khoản DTU";
-            String body = "<h3>Xin chào " + user.getFullName() + "</h3>"
-                    + "<p>Hệ thống vừa tạo một mã xác thực (OTP) <strong>MỚI</strong> cho bạn:</p>"
-                    + "<h1 style='color: #b91c1c; letter-spacing: 5px;'>" + newOtp + "</h1>"
-                    + "<p>Mã này có hiệu lực trong 1 giờ. Vui lòng nhập mã này vào trang xác thực.</p>";
+            // Chuẩn bị dữ liệu để đắp vào các biến [FULL_NAME] và [OTP_CODE]
+            Map<String, String> templateVariables = new HashMap<>();
+            templateVariables.put("FULL_NAME", user.getFullName()); // Lấy tên từ object user
+            templateVariables.put("OTP_CODE", newOtp);              // Mã OTP mới vừa sinh ra
 
-            emailService.sendHtmlEmail(email, subject, body);
+            // Gọi EmailService gửi đi dùng chung mẫu "OTP_REGISTER"
+            boolean isSent = emailService.sendEmailUsingTemplate(email, "OTP_REGISTER", templateVariables);
 
-            // Báo thành công màu xanh lá
-            redirectAttributes.addAttribute("success", "Đã gửi lại mã OTP mới. Vui lòng kiểm tra email (cả mục Thư Rác)!");
+            if (isSent) {
+                // Báo thành công màu xanh lá
+                redirectAttributes.addAttribute("success", "Đã gửi lại mã OTP mới. Vui lòng kiểm tra email (cả mục Thư Rác)!");
+            } else {
+                redirectAttributes.addAttribute("error", "Hệ thống chưa cấu hình mẫu Email OTP_REGISTER!");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             redirectAttributes.addAttribute("error", "Lỗi mạng khi gửi mail, vui lòng thử lại sau.");

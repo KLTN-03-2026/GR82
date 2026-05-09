@@ -7,6 +7,7 @@
     <title>Admin Portal - DTU Crawler</title>
 
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/fragments/header.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -37,8 +38,11 @@
                 <li><a th:href="@{/admin/schedules}"><i class="fa-regular fa-calendar-alt"></i> Lịch thi</a></li>
                 <li><a th:href="@{/admin/user}"><i class="fa-solid fa-users"></i> Người Dùng</a></li>
                 <li><a th:href="@{/admin/emails}"><i class="fa-solid fa-users"></i> Email</a></li>
-                <li><a th:href="@{/admin/thongke}"><i class="fa-solid fa-users"></i> Thống kê</a></li>
-                <li><a href="#"><i class="fa-solid fa-gear"></i> Cấu hình</a></li>
+                <li><a th:href="@{/admin/documents}"><i class="fa-solid fa-users"></i> Tài Liệu</a></li>
+                <li><a th:href="@{/admin/stats}"><i class="fa-solid fa-users"></i> Thống kê</a></li>
+                <li><a th:href="@{/admin/settings}"><i class="fa-solid fa-gear"></i> Cấu hình</a></li>
+                <li><a href="javascript:void(0)" onclick="openCrawlConfig()"><i class="fa-solid fa-spider"></i> Robot
+                        Crawler</a></li>
             </ul>
             <div class="system-status">
                 <span class="dot green"></span> Engine Running
@@ -47,45 +51,133 @@
 
         <main class="main-content">
 
-            <header class="top-header">
-                <div class="header-left">
-                    <h3>DTU Crawler</h3>
-                    <div class="search-bar">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Tìm kiếm dữ liệu...">
-                    </div>
-                </div>
-                <div class="header-right">
-                    <i class="fa-regular fa-bell icon-btn"></i>
-                    <i class="fa-solid fa-gear icon-btn"></i>
-                    <div class="user-profile">
-                        <span class="user-name">Admin User<br><small>Super Admin</small></span>
-                        <div class="avatar"><i class="fa-solid fa-user"></i></div>
-                    </div>
-                    <button class="btn-primary" onclick="startCrawl()">Cào dữ liệu ngay</button>
-                </div>
-            </header>
+            <!-- Mảnh Header -->
+            <div th:replace="~{fragments/header :: top_navbar}"></div>
 
+            <!-- Khu vực nội dung thay đổi của từng trang -->
             <div th:replace="${dynamicContent}"></div>
 
         </main>
+
     </div>
 
     <div class="fab-container">
-        <button class="fab-btn"><i class="fa-solid fa-bolt"></i></button>
+        <button class="fab-btn" onclick="toggleAIChat()"><i class="fa-solid fa-brain"></i></button>
+    </div>
+
+    <!-- MODAL THEO DÕI CÀO DỮ LIỆU -->
+    <div id="crawlModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-robot"></i> Monitoring Exam Crawler</h3>
+                <button class="btn-icon" onclick="closeCrawlModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="crawlTerminal" class="terminal-window">
+                    <div class="terminal-line info">Ready to start crawling...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div id="crawlStatus" style="flex: 1; font-size: 13px; font-weight: 600; color: #64748b;">
+                    Status: <span style="color: #94a3b8;">Idle</span>
+                </div>
+                <button class="btn-primary" id="btnStartCrawl" onclick="startCrawlStream()">Bắt đầu Cào</button>
+                <button class="btn-outline" onclick="closeCrawlModal()" style="width: auto;">Đóng</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        function startCrawl() {
-            alert('Đang khởi động tiến trình cào dữ liệu...');
-            fetch('/api/crawl/pages?total=5')
-                .then(response => response.text())
-                .then(data => {
-                    alert('Hoàn tất:\n' + data);
-                    location.reload();
-                })
-                .catch(error => alert('Lỗi: ' + error));
+        let eventSource = null;
+
+        function openCrawlConfig() {
+            document.getElementById('crawlModal').style.display = 'flex';
+            // Reset terminal
+            const terminal = document.getElementById('crawlTerminal');
+            terminal.innerHTML = '<div class="terminal-line info">Hệ thống sẵn sàng. Nhấn "Bắt đầu Cào" để thực hiện.</div>';
+            document.getElementById('btnStartCrawl').disabled = false;
+            document.getElementById('crawlStatus').innerHTML = 'Status: <span style="color: #94a3b8;">Idle</span>';
         }
+
+        function closeCrawlModal() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            document.getElementById('crawlModal').style.display = 'none';
+        }
+
+        function startCrawlStream() {
+            const terminal = document.getElementById('crawlTerminal');
+            const btnStart = document.getElementById('btnStartCrawl');
+            const statusText = document.getElementById('crawlStatus');
+
+            terminal.innerHTML = '<div class="terminal-line info">Đang kết nối tới server...</div>';
+            btnStart.disabled = true;
+            statusText.innerHTML = 'Status: <span style="color: #3b82f6;">Connecting...</span>';
+
+            const totalPages = 5; // Có thể cho user nhập nếu muốn
+            eventSource = new EventSource(`/api/crawl/stream?total=${totalPages}`);
+
+            eventSource.addEventListener('log', function (event) {
+                const log = event.data;
+                const line = document.createElement('div');
+                line.className = 'terminal-line';
+
+                // Phân loại màu log
+                if (log.includes('SUCCESS')) line.classList.add('success');
+                else if (log.includes('ERROR')) line.classList.add('error');
+                else if (log.includes('WARNING')) line.classList.add('warning');
+                else if (log.includes('PROCESSING')) line.classList.add('processing');
+                else if (log.includes('SKIPPED') || log.includes('SKIP')) line.classList.add('warning');
+                else if (log.includes('HOÀN TẤT')) line.classList.add('success');
+                else line.classList.add('info');
+
+                line.textContent = log;
+                terminal.appendChild(line);
+
+                // Auto scroll
+                terminal.scrollTop = terminal.scrollHeight;
+
+                statusText.innerHTML = 'Status: <span style="color: #10b981;">Running...</span>';
+            });
+
+            eventSource.onerror = function (err) {
+                console.error("EventSource failed:", err);
+                const line = document.createElement('div');
+                line.className = 'terminal-line error';
+                line.textContent = '>>> KẾT THÚC PHIÊN HOẶC MẤT KẾT NỐI.';
+                terminal.appendChild(line);
+
+                eventSource.close();
+                eventSource = null;
+                btnStart.disabled = false;
+                statusText.innerHTML = 'Status: <span style="color: #ef4444;">Stopped</span>';
+            };
+        }
+
+        function startCrawl() {
+            openCrawlConfig();
+        }
+
+        function toggleAIChat() {
+            const chatbox = document.getElementById('aiChatbox');
+            if (chatbox.style.display === 'flex') {
+                chatbox.style.display = 'none';
+            } else {
+                chatbox.style.display = 'flex';
+                // Focus input
+                setTimeout(() => document.getElementById('aiInput').focus(), 100);
+            }
+        }
+
+        // Enter to send
+        document.getElementById('aiInput')?.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                // Future implementation: sendMessage();
+                alert('Tính năng AI Chat đang được phát triển...');
+            }
+        });
     </script>
 </body>
 

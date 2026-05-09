@@ -1,246 +1,371 @@
 <!DOCTYPE html>
-<html th:replace="~{admin-layout :: admin_layout(~{::#file-content}, '/css/admin-files.css')}" xmlns:th="http://www.thymeleaf.org">
+<html th:replace="~{admin-layout :: admin_layout(~{::#file-content}, '/css/admin-files.css')}"
+    xmlns:th="http://www.thymeleaf.org">
+
 <body>
 
-<div id="file-content">
-    <div class="page-header-wrapper" style="align-items: flex-end;">
-        <div class="page-title">
-            <h2 style="margin-bottom: 8px;">Quản lý File & Tài liệu</h2>
-        </div>
-        <div class="header-actions">
-            <div class="table-search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input id="tableSearchInput" type="text" placeholder="Tìm kiếm file...">
+    <div id="file-content">
+        <div class="stats-overview" style="margin-bottom: 24px;">
+            <div class="stat-box">
+                <div class="stat-icon bg-red-light text-red"><i class="fa-solid fa-folder-tree"></i></div>
+                <div class="stat-text">
+                    <p>Tổng tài liệu</p>
+                    <h4 th:text="${totalFiles}">0</h4>
+                </div>
             </div>
-            <button class="btn-outline"><i class="fa-solid fa-filter"></i> Lọc</button>
-            <button class="btn-primary" style="display: flex; gap: 8px; align-items: center;">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Upload File
-            </button>
-        </div>
-    </div>
-
-    <div class="table-container">
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                <tr>
-                    <th width="10%">MÃ</th>
-                    <th width="35%">TÊN FILE</th>
-                    <th width="15%">NGUỒN</th>
-                    <th width="12%" style="text-align: right;">KÍCH THƯỚC</th>
-                    <th width="15%">NGÀY TẢI LÊN</th>
-                    <th width="13%" style="text-align: center;">THAO TÁC</th>
-                </tr>
-                </thead>
-                <tbody id = "file-table-body">
-                <tr th:each = "f : ${filePage.content}">
-                    <td style="font-weight: 700; color: #94a3b8; font-size: 12px;" th:text=" '#F' + ${f.id}">#F9021</td>
-                    <td>
-                        <div class="file-item-info">
-                            <div class="file-icon-box"
-                                 th:classappend="${f.extension == 'pdf' ? 'bg-red-light text-red' : (f.extension == 'xls' || f.extension == 'xlsx' ? 'bg-green-light text-green' : 'bg-blue-light text-blue')}">
-                                <i th:class="${f.extension == 'pdf' ? 'fa-regular fa-file-pdf' : (f.extension == 'xls' || f.extension == 'xlsx' ? 'fa-regular fa-file-excel' : 'fa-regular fa-file')}"></i>
-                            </div>
-                            <div class="file-name-stack">
-                                <span class="file-main-name" th:text="${f.originalName}">Bao_cao.pdf</span>
-                                <span class="file-sub-type" th:text="${f.extension}">pdf</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="source-badge" th:text = ${f.sourceName}>dtu.edu.vn</span></td>
-                    <td style="text-align: right; font-weight: 600; color: #475569;" th:text = "${f.fileSize / 1024} + 'KB'">2.4 MB</td>
-                    <td class="text-muted" style="font-size: 13px;" th:text = "${#temporals.format(f.uploadedAt, 'dd/MM/yy HH:mm')}">15/10/2026<br><small>09:45</small></td>
-                    <td style="text-align: center;">
-                        <div class="action-buttons">
-                            <button class="btn-icon btn-download" title="Tải xuống" th:attr = "data-id=${f.id}" ><i class="fa-solid fa-download"></i></button>
-                            <button class="btn-icon btn-detail" title="Xem chi tiết" th:attr = "data-id=${f.id}"><i class="fa-regular fa-eye"></i></button>
-                            <button class="btn-icon btn-delete" title="Xóa" th:attr="data-id=${f.id}"><i class="fa-regular fa-trash-can"></i></button>
-                        </div>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(filePage.content)}">
-                    <td colspan="6" style="text-align: center; padding: 20px;">Hệ thống chưa có tệp tin nào.</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="pagination">
-            <span class="page-info">Showing 1 to 2 of 24 entries</span>
-            <div class="page-controls">
-                <a href="#" class="page-btn"><i class="fa-solid fa-angles-left"></i></a>
-                <a href="#" class="page-btn active">1</a>
-                <a href="#" class="page-btn">2</a>
-                <a href="#" class="page-btn"><i class="fa-solid fa-angles-right"></i></a>
+            <div class="stat-box">
+                <div class="stat-icon bg-green-light text-green"><i class="fa-solid fa-server"></i></div>
+                <div class="stat-text">
+                    <p>Đã đồng bộ</p>
+                    <h4>
+                        <span th:text="${parsedFiles}">0</span>
+                        <span style="font-size: 16px; color: #94a3b8; margin: 0 4px;">/</span>
+                        <span th:text="${downloadedFiles}" style="font-size: 18px; color: #64748b;">0</span>
+                    </h4>
+                </div>
+                <div
+                    style=" bottom: 16px; right: 20px; background: #d1fae5; color: #10b981; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1); opacity: 1 !important; visibility: visible !important; transition: none !important; ">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                    <span th:text="${syncRate} + '%'">85.5%</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon bg-orange-light text-orange"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                <div class="stat-text">
+                    <p>Đã tải (Lưu trữ)</p>
+                    <h4 th:text="${downloadedFiles}">0</h4>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon bg-blue-light text-blue"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div class="stat-text">
+                    <p>Mới cập nhật</p>
+                    <h4 th:text="${newUpdatedFiles}">0</h4>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-box" id="detailModal">
-
-            <div class="modal-header">
-                <div class="modal-header-left">
-                    <div class="file-icon-box bg-red-light text-red" style="width: 56px; height: 56px; font-size: 24px;">
-                        <i class="fa-solid fa-box-archive"></i>
-                    </div>
-                    <div>
-                        <h3 style="font-size: 24px;">Chi tiết tập tin</h3>
-                        <p class="text-muted" style="font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px;" id="modalFileId">MÃ TỆP: #...</p>
+        <div class="page-header-wrapper">
+            <div class="header-actions">
+                <div class="table-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="searchInput" type="text" placeholder="Tìm kiếm tên tài liệu, nguồn...">
+                </div>
+                <!-- NÚT LỌC + DROPDOWN -->
+                <div style="position: relative;">
+                    <button class="btn-outline" id="btnToggleFilter"><i class="fa-solid fa-filter"></i> Lọc</button>
+                    <div id="filterPanel" class="filter-dropdown">
+                        <div class="filter-dropdown-header">Lọc theo</div>
+                        <a href="/admin/files?type=pdf" class="filter-dropdown-item" data-filter="pdf">
+                            <i class="fa-regular fa-file-pdf" style="color: #dc2626;"></i>
+                            <span>Tệp PDF (.pdf)</span>
+                        </a>
+                        <a href="/admin/files?type=excel" class="filter-dropdown-item" data-filter="excel">
+                            <i class="fa-regular fa-file-excel" style="color: #16a34a;"></i>
+                            <span>Tệp Excel (.xls, .xlsx)</span>
+                        </a>
+                        <div class="filter-dropdown-divider"></div>
+                        <a href="/admin/files?sort=interest" class="filter-dropdown-item" data-filter="interest">
+                            <i class="fa-solid fa-fire" style="color: #f59e0b;"></i>
+                            <span>Lượt quan tâm nhiều nhất</span>
+                        </a>
+                        <a href="/admin/files?sort=newest" class="filter-dropdown-item" data-filter="newest">
+                            <i class="fa-solid fa-clock" style="color: #6366f1;"></i>
+                            <span>Mới nhất</span>
+                        </a>
+                        <a href="/admin/files?sort=largest" class="filter-dropdown-item" data-filter="largest">
+                            <i class="fa-solid fa-weight-hanging" style="color: #0ea5e9;"></i>
+                            <span>Kích thước lớn nhất</span>
+                        </a>
+                        <div class="filter-dropdown-divider"></div>
+                        <a href="/admin/files" class="filter-dropdown-item filter-dropdown-clear">
+                            <i class="fa-solid fa-xmark"></i>
+                            <span>Xóa bộ lọc</span>
+                        </a>
                     </div>
                 </div>
-                <div class="close-modal" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></div>
-            </div>
-
-            <div class="modal-body" id="dynamic-modal-body">
-
-                <div id="state-loading" class="state-container">
-                    <i class="fa-solid fa-spinner fa-spin state-icon" style="color: #b91c1c;"></i>
-                    <p class="state-text">Đang tải dữ liệu...</p>
-                </div>
-
-                <div id="state-error" class="state-container state-error">
-                    <i class="fa-solid fa-triangle-exclamation state-icon"></i>
-                    <p id="error-message" class="state-text">Có lỗi xảy ra.</p>
-                </div>
-
-                <div id="state-pdf" class="preview-wrapper">
-                    <iframe id="pdf-iframe" src="" class="pdf-frame"></iframe>
-                </div>
-
-                <div id="state-excel" class="preview-wrapper">
-
-                    <div class="preview-card">
-                        <div class="preview-col">
-                            <span class="preview-label">Thông tin Môn thi</span>
-                            <p id="ui-course-title" class="preview-title">-</p>
-                            <p id="ui-course-meta" class="preview-meta">-</p>
-                        </div>
-                        <div class="preview-col preview-col-right">
-                            <div class="preview-header-flex">
-                                <span class="preview-label">Chi tiết Phòng đang chọn</span>
-                                <span class="preview-badge">SẴN SÀNG</span>
-                            </div>
-                            <p id="ui-room-name" class="preview-title-red">-</p>
-                            <div class="preview-meta-group">
-                                <span class="preview-meta-item"><i class="fa-solid fa-location-dot preview-meta-icon"></i><span id="ui-room-location">-</span></span>
-                                <span class="preview-meta-item"><i class="fa-regular fa-clock preview-meta-icon"></i><span id="ui-room-time">-</span></span>
-                                <span class="preview-meta-item"><i class="fa-solid fa-users preview-meta-icon"></i><span id="ui-room-capacity">Sức chứa: -</span></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="preview-data-section">
-                        <div class="preview-table-wrapper">
-                            <table class="data-table" style="margin: 0;">
-                                <thead>
-                                <tr>
-                                    <th width="15%">STT / GHẾ</th>
-                                    <th width="25%">MÃ SV</th>
-                                    <th width="35%">HỌ VÀ TÊN</th>
-                                    <th width="25%">LỚP</th>
-                                </tr>
-                                </thead>
-                                <tbody id="inner-student-table-body">
-                                <tr><td colspan="4" style="text-align: center; padding: 20px;">Đang tải...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="excel-tabs-container" class="excel-tabs-wrapper"></div>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-outline" id="closeModalFooterBtn">Đóng</button>
-                <button class="btn-primary" style="box-shadow: 0 4px 12px rgba(185, 28, 28, 0.2);"><i class="fa-solid fa-download" style="margin-right: 8px;"></i> Tải xuống ngay</button>
+                <button class="btn-primary" style="background: #0ea5e9;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+                </button>
             </div>
         </div>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const detailBtns = document.querySelectorAll('.btn-detail');
-            const downloadBtns = document.querySelectorAll('.btn-download');
-            const deleteBtns = document.querySelectorAll('.btn-delete');
 
-            const overlay = document.getElementById('modalOverlay');
-            const closeBtn = document.getElementById('closeModalBtn');
-            const closeFooterBtn = document.getElementById('closeModalFooterBtn');
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="8%">MÃ</th>
+                            <th width="30%">TÊN FILE</th>
+                            <th width="12%">NGUỒN</th>
+                            <th width="14%" style="text-align: right;">KÍCH THƯỚC</th>
+                            <th width="16%">NGÀY TẢI LÊN</th>
+                            <th width="12%" style="text-align: center;">THAO TÁC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="file-table-body">
+                        <tr th:each="f : ${filePage.content}">
+                            <!-- 1. MÃ -->
+                            <td style="font-weight: 700; color: #94a3b8; font-size: 12px;" th:text=" '#F' + ${f.id}">
+                                #F9021</td>
 
-            // ==========================================
-            // 1. CHỨC NĂNG XEM CHI TIẾT FILE
-            // ==========================================
-            detailBtns.forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const id = this.getAttribute('data-id');
+                            <!-- 2. TÊN FILE -->
+                            <td>
+                                <div class="file-item-info">
+                                    <div class="file-icon-box"
+                                        th:classappend="${f.extension?.name() == 'pdf' ? 'icon-pdf' : (f.extension?.name() == 'xls' || f.extension?.name() == 'xlsx' ? 'icon-excel' : 'bg-blue-light text-blue')}">
+                                        <i
+                                            th:class="${f.extension?.name() == 'pdf' ? 'fa-regular fa-file-pdf' : (f.extension?.name() == 'xls' || f.extension?.name() == 'xlsx' ? 'fa-regular fa-file-excel' : 'fa-regular fa-file')}"></i>
+                                    </div>
+                                    <div class="file-name-stack">
+                                        <span class="file-main-name" th:text="${f.originalName}">Bao_cao.pdf</span>
+                                        <span class="file-sub-type" th:text="${f.extension}">pdf</span>
+                                    </div>
+                                </div>
+                            </td>
 
-                    const row = this.closest('tr');
-                    const fileNameSpan = row.querySelector('.file-main-name');
-                    const fileName = fileNameSpan ? fileNameSpan.textContent : '';
-                    const ext = fileName.split('.').pop().toLowerCase();
+                            <!-- 3. NGUỒN -->
+                            <td><span class="source-badge" th:text="${f.sourceName}">dtu.edu.vn</span></td>
 
-                    if (document.getElementById('modalFileId')) {
-                        document.getElementById('modalFileId').textContent = 'MÃ TỆP: #F' + id;
-                    }
+                            <!-- 4. KÍCH THƯỚC -->
+                            <td style="text-align: right; font-weight: 600; color: #475569;"
+                                th:text="${f.fileSize / 1024} + 'KB'">2.4 MB</td>
 
-                    // Khai báo các màn hình (States)
-                    const stateLoading = document.getElementById('state-loading');
-                    const stateError = document.getElementById('state-error');
-                    const statePdf = document.getElementById('state-pdf');
-                    const stateExcel = document.getElementById('state-excel');
 
-                    // Hàm chuyển đổi màn hình
-                    const showState = (stateToShow) => {
-                        [stateLoading, stateError, statePdf, stateExcel].forEach(el => el.classList.remove('active'));
-                        if (stateToShow) stateToShow.classList.add('active');
-                    };
 
-                    showState(stateLoading);
-                    overlay.classList.add('active');
+                            <!-- 6. NGÀY TẢI LÊN -->
+                            <td class="text-muted" style="font-size: 13px;"
+                                th:text="${#temporals.format(f.uploadedAt, 'dd/MM/yy HH:mm')}">
+                                15/10/2026<br><small>09:45</small></td>
 
-                    // --- MỞ BẢN PDF ---
-                    if (ext === 'pdf') {
-                        document.getElementById('pdf-iframe').src = `/api/admin/files/view/${id}#toolbar=0`;
-                        showState(statePdf);
-                    }
+                            <!-- 7. THAO TÁC -->
+                            <td style="text-align: center;">
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-download" title="Tải xuống" th:attr="data-id=${f.id}"><i
+                                            class="fa-solid fa-download"></i></button>
+                                    <button class="btn-icon btn-detail" title="Xem chi tiết"
+                                        th:attr="data-id=${f.id}"><i class="fa-regular fa-eye"></i></button>
+                                    <button class="btn-icon btn-delete" title="Xóa" th:attr="data-id=${f.id}"><i
+                                            class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(filePage.content)}">
+                            <td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Hệ thống chưa có
+                                tệp tin nào khớp với điều kiện lọc.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                    // --- MỞ BẢNG EXCEL ---
-                    else if (ext === 'xls' || ext === 'xlsx') {
-                        fetch('/api/admin/files/' + id + '/parsed-details')
-                            .then(res => {
-                                if (!res.ok) throw new Error("File này chưa được hệ thống bóc tách dữ liệu hoặc không có lịch thi.");
-                                return res.json();
-                            })
-                            .then(data => {
-                                showState(stateExcel);
+            <!-- KHỐI PHÂN TRANG CHUẨN THYMELEAF -->
+            <div class="pagination" th:if="${filePage.totalPages > 0}">
+                <span class="page-info"
+                    th:text="'Hiển thị trang ' + (${filePage.number + 1}) + ' / ' + ${filePage.totalPages} + ' (Tổng ' + ${filePage.totalElements} + ' file)'">
+                    Showing 1 of 10
+                </span>
+                <div class="page-controls">
+                    <a th:if="${!filePage.first}"
+                        th:href="@{/admin/files(page=0, search=${param.search}, type=${param.type}, sort=${param.sort}, minInterest=${param.minInterest})}"
+                        class="page-btn" title="Trang đầu"><i class="fa-solid fa-angles-left"></i></a>
+                    <span th:if="${filePage.first}" class="page-btn disabled"><i
+                            class="fa-solid fa-angles-left"></i></span>
 
-                                // 1. Điền thông tin Môn học (Cố định)
-                                document.getElementById('ui-course-title').textContent = `[${data.courseCode || '...'}] ${data.courseName || '...'}`;
-                                document.getElementById('ui-course-meta').textContent = `Tín chỉ: ${data.credit || '-'} | Học kỳ: ${data.semester || '-'}`;
+                    <!-- Các số trang (Chỉ hiển thị +-2 trang xung quanh trang hiện tại) -->
+                    <th:block th:each="i : ${#numbers.sequence(0, filePage.totalPages - 1)}">
+                        <a th:if="${i >= filePage.number - 2 and i <= filePage.number + 2}"
+                            th:href="@{/admin/files(page=${i}, search=${param.search}, type=${param.type}, sort=${param.sort}, minInterest=${param.minInterest})}"
+                            class="page-btn" th:classappend="${filePage.number == i} ? 'active' : ''"
+                            th:text="${i + 1}">1
+                        </a>
+                    </th:block>
 
-                                const studentTbody = document.getElementById('inner-student-table-body');
-                                const tabsContainer = document.getElementById('excel-tabs-container');
+                    <a th:if="${!filePage.last}"
+                        th:href="@{/admin/files(page=${filePage.totalPages - 1}, search=${param.search}, type=${param.type}, sort=${param.sort}, minInterest=${param.minInterest})}"
+                        class="page-btn" title="Trang cuối"><i class="fa-solid fa-angles-right"></i></a>
+                    <span th:if="${filePage.last}" class="page-btn disabled"><i
+                            class="fa-solid fa-angles-right"></i></span>
 
-                                // 2. Hàm Load Phòng & Sinh Viên khi click Tab
-                                const loadRoomData = (room) => {
-                                    // Điền thẻ Phòng
-                                    document.getElementById('ui-room-name').textContent = room.roomName;
-                                    document.getElementById('ui-room-location').textContent = room.location || '-';
-                                    document.getElementById('ui-room-time').textContent = `${room.date || '-'}, ${room.time || '-'}`;
-                                    document.getElementById('ui-room-capacity').textContent = `Sức chứa: ${room.capacity || 0}`;
+                </div>
+            </div>
+        </div>
 
-                                    // Đổ dữ liệu Sinh Viên
-                                    studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin text-red"></i> Đang tải danh sách...</td></tr>';
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-box" id="detailModal">
 
-                                    fetch('/api/admin/rooms/' + room.id + '/students')
-                                        .then(res => res.json())
-                                        .then(students => {
-                                            studentTbody.innerHTML = '';
-                                            if (students && students.length > 0) {
-                                                students.forEach((st, idx) => {
-                                                    studentTbody.innerHTML += `
+                <div class="modal-header">
+                    <div class="modal-header-left">
+                        <div class="file-icon-box bg-red-light text-red"
+                            style="width: 56px; height: 56px; font-size: 24px;">
+                            <i class="fa-solid fa-box-archive"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 24px;">Chi tiết tập tin</h3>
+                            <p class="text-muted"
+                                style="font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px;"
+                                id="modalFileId">MÃ TỆP: #...</p>
+                        </div>
+                    </div>
+                    <div class="close-modal" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></div>
+                </div>
+
+                <div class="modal-body" id="dynamic-modal-body">
+
+                    <div id="state-loading" class="state-container">
+                        <i class="fa-solid fa-spinner fa-spin state-icon" style="color: #b91c1c;"></i>
+                        <p class="state-text">Đang tải dữ liệu...</p>
+                    </div>
+
+                    <div id="state-error" class="state-container state-error">
+                        <i class="fa-solid fa-triangle-exclamation state-icon"></i>
+                        <p id="error-message" class="state-text">Có lỗi xảy ra.</p>
+                    </div>
+
+                    <div id="state-pdf" class="preview-wrapper">
+                        <iframe id="pdf-iframe" src="" class="pdf-frame"></iframe>
+                    </div>
+
+                    <div id="state-excel" class="preview-wrapper">
+
+                        <div class="preview-card">
+                            <div class="preview-col">
+                                <span class="preview-label">Thông tin Môn thi</span>
+                                <p id="ui-course-title" class="preview-title">-</p>
+                                <p id="ui-course-meta" class="preview-meta">-</p>
+                            </div>
+                            <div class="preview-col preview-col-right">
+                                <div class="preview-header-flex">
+                                    <span class="preview-label">Chi tiết Phòng đang chọn</span>
+                                    <span class="preview-badge">SẴN SÀNG</span>
+                                </div>
+                                <p id="ui-room-name" class="preview-title-red">-</p>
+                                <div class="preview-meta-group">
+                                    <span class="preview-meta-item"><i
+                                            class="fa-solid fa-location-dot preview-meta-icon"></i><span
+                                            id="ui-room-location">-</span></span>
+                                    <span class="preview-meta-item"><i
+                                            class="fa-regular fa-clock preview-meta-icon"></i><span
+                                            id="ui-room-time">-</span></span>
+                                    <span class="preview-meta-item"><i
+                                            class="fa-solid fa-users preview-meta-icon"></i><span
+                                            id="ui-room-capacity">Sức chứa: -</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preview-data-section">
+                            <div class="preview-table-wrapper">
+                                <table class="data-table" style="margin: 0;">
+                                    <thead>
+                                        <tr>
+                                            <th width="15%">STT / GHẾ</th>
+                                            <th width="25%">MÃ SV</th>
+                                            <th width="35%">HỌ VÀ TÊN</th>
+                                            <th width="25%">LỚP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inner-student-table-body">
+                                        <tr>
+                                            <td colspan="4" style="text-align: center; padding: 20px;">Đang tải...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="excel-tabs-container" class="excel-tabs-wrapper"></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-outline" id="closeModalFooterBtn">Đóng</button>
+                    <button class="btn-primary" style="box-shadow: 0 4px 12px rgba(185, 28, 28, 0.2);"><i
+                            class="fa-solid fa-download" style="margin-right: 8px;"></i> Tải xuống ngay</button>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const detailBtns = document.querySelectorAll('.btn-detail');
+                const downloadBtns = document.querySelectorAll('.btn-download');
+                const deleteBtns = document.querySelectorAll('.btn-delete');
+
+                const overlay = document.getElementById('modalOverlay');
+                const closeBtn = document.getElementById('closeModalBtn');
+                const closeFooterBtn = document.getElementById('closeModalFooterBtn');
+
+                // ==========================================
+                // 1. CHỨC NĂNG XEM CHI TIẾT FILE
+                // ==========================================
+                detailBtns.forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const id = this.getAttribute('data-id');
+
+                        const row = this.closest('tr');
+                        const fileNameSpan = row.querySelector('.file-main-name');
+                        const fileName = fileNameSpan ? fileNameSpan.textContent : '';
+                        const ext = fileName.split('.').pop().toLowerCase();
+
+                        if (document.getElementById('modalFileId')) {
+                            document.getElementById('modalFileId').textContent = 'MÃ TỆP: #F' + id;
+                        }
+
+                        // Khai báo các màn hình (States)
+                        const stateLoading = document.getElementById('state-loading');
+                        const stateError = document.getElementById('state-error');
+                        const statePdf = document.getElementById('state-pdf');
+                        const stateExcel = document.getElementById('state-excel');
+
+                        // Hàm chuyển đổi màn hình
+                        const showState = (stateToShow) => {
+                            [stateLoading, stateError, statePdf, stateExcel].forEach(el => el.classList.remove('active'));
+                            if (stateToShow) stateToShow.classList.add('active');
+                        };
+
+                        showState(stateLoading);
+                        overlay.classList.add('active');
+
+                        // --- MỞ BẢN PDF ---
+                        if (ext === 'pdf') {
+                            document.getElementById('pdf-iframe').src = `/api/admin/files/view/${id}#toolbar=0`;
+                            showState(statePdf);
+                        }
+
+                        // --- MỞ BẢNG EXCEL ---
+                        else if (ext === 'xls' || ext === 'xlsx') {
+                            fetch('/api/admin/files/' + id + '/parsed-details')
+                                .then(res => {
+                                    if (!res.ok) throw new Error("File này chưa được hệ thống bóc tách dữ liệu hoặc không có lịch thi.");
+                                    return res.json();
+                                })
+                                .then(data => {
+                                    showState(stateExcel);
+
+                                    // 1. Điền thông tin Môn học (Cố định)
+                                    document.getElementById('ui-course-title').textContent = `[${data.courseCode || '...'}] ${data.courseName || '...'}`;
+                                    document.getElementById('ui-course-meta').textContent = `Tín chỉ: ${data.credit || '-'} | Học kỳ: ${data.semester || '-'}`;
+
+                                    const studentTbody = document.getElementById('inner-student-table-body');
+                                    const tabsContainer = document.getElementById('excel-tabs-container');
+
+                                    // 2. Hàm Load Phòng & Sinh Viên khi click Tab
+                                    const loadRoomData = (room) => {
+                                        // Điền thẻ Phòng
+                                        document.getElementById('ui-room-name').textContent = room.roomName;
+                                        document.getElementById('ui-room-location').textContent = room.location || '-';
+                                        document.getElementById('ui-room-time').textContent = `${room.date || '-'}, ${room.time || '-'}`;
+                                        document.getElementById('ui-room-capacity').textContent = `Sức chứa: ${room.capacity || 0}`;
+
+                                        // Đổ dữ liệu Sinh Viên
+                                        studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin text-red"></i> Đang tải danh sách...</td></tr>';
+
+                                        fetch('/api/admin/rooms/' + room.id + '/students')
+                                            .then(res => res.json())
+                                            .then(students => {
+                                                studentTbody.innerHTML = '';
+                                                if (students && students.length > 0) {
+                                                    students.forEach((st, idx) => {
+                                                        studentTbody.innerHTML += `
                                                         <tr>
                                                             <td style="color: #b91c1c; font-weight: 700;">${st.seatNumber || (idx + 1)}</td>
                                                             <td style="font-family: monospace; color: #475569;">${st.studentCode || ''}</td>
@@ -248,118 +373,161 @@
                                                             <td>${st.studentClass || ''}</td>
                                                         </tr>
                                                     `;
-                                                });
-                                            } else {
-                                                studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">Phòng này chưa có sinh viên.</td></tr>';
-                                            }
-                                        })
-                                        .catch(() => {
-                                            studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #dc2626;">Lỗi khi tải dữ liệu sinh viên!</td></tr>';
+                                                    });
+                                                } else {
+                                                    studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">Phòng này chưa có sinh viên.</td></tr>';
+                                                }
+                                            })
+                                            .catch(() => {
+                                                studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #dc2626;">Lỗi khi tải dữ liệu sinh viên!</td></tr>';
+                                            });
+                                    };
+
+                                    // 3. Vẽ Tabs Excel dưới đáy
+                                    tabsContainer.innerHTML = '';
+                                    if (data.rooms && data.rooms.length > 0) {
+                                        data.rooms.forEach((room, index) => {
+                                            const btnTab = document.createElement('button');
+                                            btnTab.className = 'excel-tab' + (index === 0 ? ' active' : '');
+                                            btnTab.textContent = room.roomName;
+
+                                            btnTab.addEventListener('click', () => {
+                                                document.querySelectorAll('.excel-tab').forEach(t => t.classList.remove('active'));
+                                                btnTab.classList.add('active');
+                                                loadRoomData(room);
+                                            });
+                                            tabsContainer.appendChild(btnTab);
                                         });
-                                };
 
-                                // 3. Vẽ Tabs Excel dưới đáy
-                                tabsContainer.innerHTML = '';
-                                if (data.rooms && data.rooms.length > 0) {
-                                    data.rooms.forEach((room, index) => {
-                                        const btnTab = document.createElement('button');
-                                        btnTab.className = 'excel-tab' + (index === 0 ? ' active' : '');
-                                        btnTab.textContent = room.roomName;
-
-                                        btnTab.addEventListener('click', () => {
-                                            document.querySelectorAll('.excel-tab').forEach(t => t.classList.remove('active'));
-                                            btnTab.classList.add('active');
-                                            loadRoomData(room);
-                                        });
-                                        tabsContainer.appendChild(btnTab);
-                                    });
-
-                                    loadRoomData(data.rooms[0]); // Chạy mặc định Tab đầu tiên
-                                } else {
-                                    document.getElementById('ui-room-name').textContent = "Chưa xếp phòng";
-                                    studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">Môn thi này chưa được phân bổ phòng.</td></tr>';
-                                }
-                            })
-                            .catch(err => {
-                                document.getElementById('error-message').textContent = err.message;
-                                showState(stateError);
-                            });
-                    }
-                    // --- NẾU LÀ FILE LẠ ---
-                    else {
-                        document.getElementById('error-message').textContent = "Không hỗ trợ xem trước định dạng file này.";
-                        showState(stateError);
-                    }
-                });
-            });
-
-            // ==========================================
-            // 2. CHỨC NĂNG TẢI XUỐNG
-            // ==========================================
-            downloadBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    window.location.href = '/api/admin/files/download/' + id;
-                });
-            });
-
-            // ==========================================
-            // 3. CHỨC NĂNG XÓA
-            // ==========================================
-            deleteBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    if(confirm('Chú ý: Hành động này sẽ xóa file này khỏi Database VÀ XÓA LUÔN trên ổ cứng máy chủ. Bạn có chắc chắn?')) {
-                        fetch('/api/admin/files/' + id, { method: 'DELETE' })
-                        .then(response => {
-                            if(response.ok) {
-                                alert("Đã xóa file thành công!");
-                                window.location.reload();
-                            } else {
-                                alert("Lỗi khi xóa file!");
-                            }
-                        });
-                    }
-                });
-            });
-
-            // ==========================================
-            // 4. ĐÓNG MODAL
-            // ==========================================
-            const closeModal = () => overlay.classList.remove('active');
-            if (closeBtn) closeBtn.addEventListener('click', closeModal);
-            if (closeFooterBtn) closeFooterBtn.addEventListener('click', closeModal);
-            if (overlay) {
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) closeModal();
-                });
-            }
-
-            // ==========================================
-            // 5. TÌM KIẾM BẢNG (LIVE SEARCH)
-            // ==========================================
-            const searchInput = document.getElementById('tableSearchInput');
-            const tableRows = document.querySelectorAll('.data-table tbody tr');
-
-            if(searchInput) {
-                searchInput.addEventListener('keyup', function() {
-                    const searchTerm = this.value.toLowerCase().trim();
-                    tableRows.forEach(row => {
-                        if (row.cells.length === 1) return;
-                        const fileCode = row.cells[0].textContent.toLowerCase();
-                        const fileName = row.cells[1].textContent.toLowerCase();
-
-                        if (fileCode.includes(searchTerm) || fileName.includes(searchTerm)) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
+                                        loadRoomData(data.rooms[0]); // Chạy mặc định Tab đầu tiên
+                                    } else {
+                                        document.getElementById('ui-room-name').textContent = "Chưa xếp phòng";
+                                        studentTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">Môn thi này chưa được phân bổ phòng.</td></tr>';
+                                    }
+                                })
+                                .catch(err => {
+                                    document.getElementById('error-message').textContent = err.message;
+                                    showState(stateError);
+                                });
+                        }
+                        // --- NẾU LÀ FILE LẠ ---
+                        else {
+                            document.getElementById('error-message').textContent = "Không hỗ trợ xem trước định dạng file này.";
+                            showState(stateError);
                         }
                     });
                 });
-            }
-        });
-    </script>
 
-</div>
+                // ==========================================
+                // 2. CHỨC NĂNG TẢI XUỐNG
+                // ==========================================
+                downloadBtns.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.getAttribute('data-id');
+                        window.location.href = '/api/admin/files/download/' + id;
+                    });
+                });
+
+                // ==========================================
+                // 3. CHỨC NĂNG XÓA
+                // ==========================================
+                deleteBtns.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.getAttribute('data-id');
+                        if (confirm('Chú ý: Hành động này sẽ xóa file này khỏi Database VÀ XÓA LUÔN trên ổ cứng máy chủ. Bạn có chắc chắn?')) {
+                            fetch('/api/admin/files/' + id, { method: 'DELETE' })
+                                .then(response => {
+                                    if (response.ok) {
+                                        alert("Đã xóa file thành công!");
+                                        window.location.reload();
+                                    } else {
+                                        alert("Lỗi khi xóa file!");
+                                    }
+                                });
+                        }
+                    });
+                });
+
+                // ==========================================
+                // 4. ĐÓNG MODAL
+                // ==========================================
+                const closeModal = () => overlay.classList.remove('active');
+                if (closeBtn) closeBtn.addEventListener('click', closeModal);
+                if (closeFooterBtn) closeFooterBtn.addEventListener('click', closeModal);
+                if (overlay) {
+                    overlay.addEventListener('click', function (e) {
+                        if (e.target === overlay) closeModal();
+                    });
+                }
+
+                // ==========================================
+                // 5. LOGIC LỌC (DROPDOWN MENU)
+                // ==========================================
+                const btnToggleFilter = document.getElementById('btnToggleFilter');
+                const filterPanel = document.getElementById('filterPanel');
+                const searchInput = document.getElementById('searchInput');
+
+                // Đóng/mở dropdown khi click nút Lọc
+                btnToggleFilter.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    filterPanel.classList.toggle('show');
+                });
+
+                // Click bên ngoài thì đóng dropdown
+                document.addEventListener('click', (e) => {
+                    if (!filterPanel.contains(e.target) && e.target !== btnToggleFilter) {
+                        filterPanel.classList.remove('show');
+                    }
+                });
+
+                // Mỗi item trong dropdown: Giữ search param nếu có
+                document.querySelectorAll('.filter-dropdown-item').forEach(item => {
+                    item.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const href = this.getAttribute('href');
+                        const url = new URL(href, window.location.origin);
+
+                        // Giữ lại search param nếu đang có
+                        if (searchInput && searchInput.value.trim()) {
+                            url.searchParams.set('search', searchInput.value.trim());
+                        }
+                        window.location.href = url.toString();
+                    });
+                });
+
+                // Đánh dấu active cho filter đang được chọn
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('search')) searchInput.value = urlParams.get('search');
+                const activeType = urlParams.get('type');
+                const activeSort = urlParams.get('sort');
+                if (activeType || activeSort) {
+                    btnToggleFilter.classList.add('filter-active');
+                    document.querySelectorAll('.filter-dropdown-item').forEach(item => {
+                        const filter = item.getAttribute('data-filter');
+                        if (filter === activeType || filter === activeSort) {
+                            item.classList.add('active');
+                        }
+                    });
+                }
+
+                // Enter ở ô tìm kiếm
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const params = new URLSearchParams(window.location.search);
+                        if (searchInput.value.trim()) {
+                            params.set('search', searchInput.value.trim());
+                        } else {
+                            params.delete('search');
+                        }
+                        window.location.href = '/admin/files?' + params.toString();
+                    }
+                });
+
+
+            });
+        </script>
+
+    </div>
 </body>
+
 </html>

@@ -4,6 +4,7 @@ import com.example.exam_support_dtu.dto.RoomDto;
 import com.example.exam_support_dtu.dto.ScheduleDto;
 import com.example.exam_support_dtu.entity.ExamRoom;
 import com.example.exam_support_dtu.entity.ExamSchedule;
+import com.example.exam_support_dtu.repository.ExamInterestRepository;
 import com.example.exam_support_dtu.repository.ExamRoomRepository;
 import com.example.exam_support_dtu.repository.ExamScheduleRepository;
 import org.springframework.data.domain.Page;
@@ -24,9 +25,13 @@ import java.util.Optional;
 public class AdminScheduleController {
     private final ExamScheduleRepository examScheduleRepository;
     private final ExamRoomRepository examRoomRepository;
-    public AdminScheduleController(ExamScheduleRepository examScheduleRepository, ExamRoomRepository examRoomRepository) {
+    private final ExamInterestRepository examInterestRepository;
+
+    public AdminScheduleController(ExamScheduleRepository examScheduleRepository, ExamRoomRepository examRoomRepository,
+            ExamInterestRepository examInterestRepository) {
         this.examScheduleRepository = examScheduleRepository;
         this.examRoomRepository = examRoomRepository;
+        this.examInterestRepository = examInterestRepository;
     }
 
     // =========================================================
@@ -45,53 +50,79 @@ public class AdminScheduleController {
         // Lấy dữ liệu phân trang từ DB
         Page<ExamSchedule> schedulePage = examScheduleRepository.findAll(pageable);
 
+        long totalSubjects = examScheduleRepository.count(); // Tổng môn thi
+        long totalRooms = examRoomRepository.count(); // Tổng phòng thi
+        long totalStudents = examScheduleRepository.sumTotalStudents(); // Tổng SV dự thi
+        long totalInterests = examInterestRepository.count(); // Tổng lượt ĐK nhận thông báo
+
         // Đẩy biến "schedulePage" sang cho file HTML Thymeleaf đọc
+
+        // 3. TỐI ƯU: Lấy toàn bộ số lượt quan tâm của CÁC lịch thi trong 1 câu SQL duy
+        // nhất
+        List<Object[]> interestCountsList = examInterestRepository.countAllInterestsGroupedByScheduleId();
+
+        // Chuyển List<Object[]> thành Map<ScheduleId, Count>
+        java.util.Map<Long, Long> interestMap = interestCountsList.stream()
+                .filter(row -> row[0] != null && row[1] != null)
+                .collect(java.util.stream.Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue(),
+                        (existing, replacement) -> existing
+                ));
+
+        // 4. Gắn số SV Quan tâm vào từng Schedule đang hiển thị
+        schedulePage.getContent().forEach(schedule -> {
+            Long count = interestMap.get(schedule.getId());
+            schedule.setInterestedCount(count != null ? count : 0L);
+        });
+
         model.addAttribute("schedulePage", schedulePage);
+        model.addAttribute("totalSubjects", totalSubjects);
+        model.addAttribute("totalRooms", totalRooms);
+        model.addAttribute("totalStudents", totalStudents);
+        model.addAttribute("totalInterests", totalInterests);
 
         // Trả về tên file HTML
         return "admin-schedules";
     }
-
-
 
     // ==========================================
     // 2. READ (XEM CHI TIẾT)
     // ==========================================
 
     @GetMapping("/api/admin/schedules/{id}")
-    @ResponseBody //Báo cho Spring biết hàm này trả JSON
+    @ResponseBody // Báo cho Spring biết hàm này trả JSON
     public ResponseEntity<ScheduleDto> getScheduleDetail(@PathVariable Long id) {
-        //Tìm lịch thi trong db
-        Optional<ExamSchedule> optionalSchedule  = examScheduleRepository.findById(id);
+        // Tìm lịch thi trong db
+        Optional<ExamSchedule> optionalSchedule = examScheduleRepository.findById(id);
 
-        //kiểm tra căn bản: nếu k tìm thấy thì trả về lỗi 404
-        if(optionalSchedule.isEmpty()) {
+        // kiểm tra căn bản: nếu k tìm thấy thì trả về lỗi 404
+        if (optionalSchedule.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        //Lấy đối tượng ra optional
+        // Lấy đối tượng ra optional
         ExamSchedule schedule = optionalSchedule.get();
 
-        //tạo 1 danh sách rỗng để chứa DTO của phòng thi
+        // tạo 1 danh sách rỗng để chứa DTO của phòng thi
         List<RoomDto> roomDtoList = new ArrayList<>();
 
-        //Duyệt qua từng phòng thi
-        if(schedule.getRooms() != null) {
-            for(ExamRoom examRoom : schedule.getRooms()) {
-                //Đóng gói từng phòng vào DTO
+        // Duyệt qua từng phòng thi
+        if (schedule.getRooms() != null) {
+            for (ExamRoom examRoom : schedule.getRooms()) {
+                // Đóng gói từng phòng vào DTO
                 RoomDto roomDto = new RoomDto(
                         examRoom.getId(),
                         examRoom.getRoomName(),
                         examRoom.getLocation(),
                         examRoom.getExamDate(),
                         examRoom.getExamTime(),
-                        examRoom.getCapacity()
-                );
+                        examRoom.getCapacity());
                 roomDtoList.add(roomDto);
             }
         }
 
-        //Đóng gói tất cả vào ScheduleDto tổng
+        // Đóng gói tất cả vào ScheduleDto tổng
         ScheduleDto scheduleDto = new ScheduleDto(
                 schedule.getId(),
                 schedule.getCourseCode(),
@@ -101,11 +132,9 @@ public class AdminScheduleController {
                 schedule.getAttempt(),
                 schedule.getTotalStudents(),
                 schedule.getNotes(),
-                roomDtoList
-        );
+                roomDtoList);
         return ResponseEntity.ok(scheduleDto);
     }
-
 
     // ==========================================
     // 3. UPDATE (CẬP NHẬT)
@@ -114,7 +143,7 @@ public class AdminScheduleController {
     @ResponseBody
     @Transactional
     public ResponseEntity<?> updateSchedule(@PathVariable Long id,
-                                            @RequestBody ScheduleDto scheduleDto) {
+            @RequestBody ScheduleDto scheduleDto) {
         try {
             // 1. Kiểm tra Lịch thi có tồn tại không
             Optional<ExamSchedule> optionalSchedule = examScheduleRepository.findById(id);
@@ -175,7 +204,7 @@ public class AdminScheduleController {
     @ResponseBody
     @Transactional
     public ResponseEntity<?> deleteSchedule(@PathVariable Long id) {
-        if(!examScheduleRepository.existsById(id)) {
+        if (!examScheduleRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
 
@@ -192,16 +221,16 @@ public class AdminScheduleController {
     @GetMapping("/api/admin/rooms/{roomId}/students")
     @ResponseBody
     public ResponseEntity<?> getStudentsByRoom(@PathVariable Long roomId) {
-        Optional<ExamRoom>  optionalExamRoom = examRoomRepository.findById(roomId);
-        if(optionalExamRoom.isEmpty()) {
+        Optional<ExamRoom> optionalExamRoom = examRoomRepository.findById(roomId);
+        if (optionalExamRoom.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        //lấy ra
+        // lấy ra
         ExamRoom examRoom = optionalExamRoom.get();
 
         List<Object> studentList = new ArrayList<>();
-        if(examRoom.getStudents() != null) {
+        if (examRoom.getStudents() != null) {
             examRoom.getStudents().forEach(st -> {
                 // Tạo DTO ẩn danh để tránh lỗi đệ quy JSON
                 studentList.add(new Object() {

@@ -1,5 +1,6 @@
 package com.example.exam_support_dtu.controller;
 
+import com.example.exam_support_dtu.annotation.LoggableAction;
 import com.example.exam_support_dtu.entity.EmailLog;
 import com.example.exam_support_dtu.entity.EmailTemplate;
 import com.example.exam_support_dtu.entity.SystemSetting;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import java.time.OffsetDateTime;
 @Controller
 public class AdminEmailController {
     private final EmailLogRepository emailLogRepository;
@@ -59,11 +60,12 @@ public class AdminEmailController {
         // 3. Lấy danh sách Mẫu Email (Cột phải)
         List<EmailTemplate> templates = emailTemplateRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
 
-        // 4. Lấy danh sách Lịch sử gửi mail (Cột trái - Phân trang, mới nhất lên đầu)
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "sentAt"));
-        Page<EmailLog> emailLogPage = emailLogRepository.findAll(pageable);
+        // 4. Lấy danh sách 10 Lịch sử gửi mail (Cột trái - Phân trang, mới nhất lên đầu)
+        Pageable pageable = PageRequest.of(page, 10, Sort.by("sentAt").descending());
+        Page<EmailLog> emailPage = emailLogRepository.findAll(pageable); // Bảng lưu lịch sử email
 
         // 5. Đẩy toàn bộ dữ liệu sang giao diện Thymeleaf
+        model.addAttribute("emailPage", emailPage);
         model.addAttribute("totalSent", totalSent);
         model.addAttribute("totalPending", totalPending);
         model.addAttribute("totalFailed", totalFailed);
@@ -71,9 +73,86 @@ public class AdminEmailController {
         model.addAttribute("notifyDays", notifyDays);
         model.addAttribute("isAutoMailOn", isAutoMailOn);
         model.addAttribute("templates", templates);
-        model.addAttribute("emailLogPage", emailLogPage);
 
         return "admin-emails"; // Tên của file HTML bạn vừa tạo ở trên
+    }
+
+    // 1. API TRẢ VỀ CHI TIẾT 1 DÒNG LOG CHO MODAL XEM
+    @GetMapping("/api/admin/emails/logs/{id}")
+    @ResponseBody
+    public ResponseEntity<EmailLog> getEmailLogDetail(@PathVariable Long id) {
+        Optional<EmailLog> optLog = emailLogRepository.findById(id);
+        if (optLog.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(optLog.get());
+    }
+
+    // 2. API XỬ LÝ GỬI LẠI (RESEND)
+    @PostMapping("/api/admin/emails/resend/{id}")
+    @ResponseBody
+    @LoggableAction(action = "RESEND_EMAIL", targetType = "EMAIL_LOG", targetId = "#id")
+    public ResponseEntity<?> resendFailedEmail(@PathVariable Long id) {
+        Optional<EmailLog> optLog = emailLogRepository.findById(id);
+        if (optLog.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy dữ liệu Log.");
+        }
+
+        EmailLog log = optLog.get();
+        if (!"failed".equalsIgnoreCase(log.getStatus())) {
+            return ResponseEntity.badRequest().body("Email này không ở trạng thái Lỗi.");
+        }
+
+        try {
+            // LƯU Ý KỸ THUẬT:
+            // Vì bảng EmailLog của bạn thiết kế CHỈ LƯU `bodySnippet` (để tiết kiệm DB),
+            // Hệ thống KHÔNG CÓ toàn bộ mã HTML gốc để gửi lại 100%.
+            // Cách xử lý tốt nhất ở đây là gửi lại dựa vào Text thuần của bodySnippet.
+
+            // Nếu bạn muốn gửi lại ĐÚNG y xì giao diện đỏ chót lúc nãy,
+            // Bạn sẽ phải bổ sung cột `fullBody` vào Entity EmailLog trong tương lai nhé!
+
+            emailService.resendEmailLog(log);
+
+            // Xóa log cũ đã bị lỗi (hoặc giữ lại tùy bạn, ở đây mình đổi status cho gọn)
+            log.setStatus("sent");
+            log.setErrorMessage(null);
+            emailLogRepository.save(log);
+
+            return ResponseEntity.ok("Gửi lại thành công!");
+        } catch (Exception e) {
+            // Nếu gửi lại vẫn lỗi, ghi đè lỗi mới vào
+            log.setErrorMessage("Gửi lại thất bại: " + e.getMessage());
+            emailLogRepository.save(log);
+            return ResponseEntity.badRequest().body("Vẫn không thể gửi. Lỗi: " + e.getMessage());
+        }
+    }
+
+    // 3. API CHỈNH SỬA VÀ GỬI LẠI (EDIT & RESEND)
+    @PostMapping("/api/admin/emails/edit-resend/{id}")
+    @ResponseBody
+    @LoggableAction(action = "EDIT_RESEND_EMAIL", targetType = "EMAIL_LOG", targetId = "#id", details = "'Sửa và gửi lại tới: ' + #payload['toEmail']")
+    public ResponseEntity<?> editAndResendEmail(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        Optional<EmailLog> optLog = emailLogRepository.findById(id);
+        if (optLog.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy dữ liệu Log.");
+        }
+
+        EmailLog log = optLog.get();
+        if (!"failed".equalsIgnoreCase(log.getStatus()) && !"pending".equalsIgnoreCase(log.getStatus())) {
+            return ResponseEntity.badRequest().body("Chỉ thao tác được trên email Thất bại hoặc Chờ gửi.");
+        }
+
+        try {
+            log.setToEmail(payload.get("toEmail"));
+            log.setSubject(payload.get("subject"));
+            log.setBodySnippet(payload.get("bodySnippet"));
+
+            emailService.resendEmailLog(log);
+            return ResponseEntity.ok("Đã cập nhật nội dung và Gửi lại thành công!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Cập nhật và Gửi lại thất bại. Lỗi: " + e.getMessage());
+        }
     }
 
     // =========================================================
@@ -93,6 +172,7 @@ public class AdminEmailController {
     // =========================================================
     @PostMapping("/api/admin/emails/templates/save")
     @ResponseBody
+    @LoggableAction(action = "SAVE_EMAIL_TEMPLATE", targetType = "EMAIL_TEMPLATE", details = "'Lưu mẫu: ' + #payload['name'] + ' (Code: ' + #payload['code'] + ')'")
     public ResponseEntity<?> saveTemplate(@RequestBody Map<String, String> payload) {
         try {
             EmailTemplate tpl;
@@ -116,7 +196,7 @@ public class AdminEmailController {
             tpl.setBodyHtml(payload.get("bodyHtml"));
 
             emailTemplateRepository.save(tpl);
-            return org.springframework.http.ResponseEntity.ok("{\"message\": \"Lưu mẫu Email thành công!\"}");
+            return ResponseEntity.ok("{\"message\": \"Lưu mẫu Email thành công!\"}");
         } catch (Exception e) {
             // Thường lỗi do trùng cột 'code' (Unique constraint)
             return ResponseEntity.badRequest()
@@ -129,6 +209,7 @@ public class AdminEmailController {
     // =========================================================
     @DeleteMapping("/api/admin/emails/templates/{id}")
     @ResponseBody
+    @LoggableAction(action = "DELETE_EMAIL_TEMPLATE", targetType = "EMAIL_TEMPLATE", targetId = "#id")
     public ResponseEntity<?> deleteTemplate(@PathVariable Long id) {
         try {
             // Kiểm tra xem mẫu có tồn tại không
@@ -161,6 +242,7 @@ public class AdminEmailController {
     // =========================================================
     @PostMapping("/api/admin/emails/config/save")
     @ResponseBody
+    @LoggableAction(action = "UPDATE_EMAIL_CONFIG", targetType = "SYSTEM_CONFIG", details = "'Cập nhật cấu hình: ' + #payload")
     public ResponseEntity<?> saveSystemConfig(@RequestBody java.util.Map<String, String> payload) {
         try {
             // 1. Lưu số ngày báo trước
@@ -192,11 +274,55 @@ public class AdminEmailController {
         }
     }
 
+
+    // =======================================================
+    // API TẠO DỮ LIỆU EMAIL GIẢ (TỪ FORM MOCK)
+    // =======================================================
+    @PostMapping("/api/admin/emails/mock")
+    @ResponseBody
+    public ResponseEntity<?> createMockEmail(@RequestBody Map<String, String> payload) {
+        String toEmail = payload.get("toEmail");
+        String subject = payload.get("subject");
+        String status = payload.get("status");
+
+        if (toEmail == null || toEmail.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Email không được để trống!");
+        }
+
+        String finalSubject = subject != null && !subject.isEmpty() ? subject : "[TEST] Không tiêu đề";
+        String body = "Kính gửi sinh viên, đây là email mô phỏng do admin tự nhập để test hệ thống.";
+
+        if ("sent".equalsIgnoreCase(status)) {
+            try {
+                emailService.sendHtmlEmail(toEmail, finalSubject, body);
+                return ResponseEntity.ok("Hệ thống đã GỬI THẬT email này và lưu Log thành công!");
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Gửi mail thật thất bại: " + e.getMessage());
+            }
+        }
+
+        EmailLog mockLog = new EmailLog();
+        mockLog.setToEmail(toEmail);
+        mockLog.setSubject(finalSubject);
+        mockLog.setBodySnippet(body);
+        mockLog.setSentAt(OffsetDateTime.now());
+        mockLog.setStatus(status != null ? status : "failed");
+
+        if ("failed".equalsIgnoreCase(status)) {
+            mockLog.setErrorMessage("java.net.ConnectException: Kết nối timeout mô phỏng (Không gửi mail thật).");
+        }
+
+        emailLogRepository.save(mockLog);
+
+        return ResponseEntity.ok("Tạo log giả với trạng thái [" + status.toUpperCase() + "] thành công!");
+    }
+
     // =========================================================
     // API: TEST GỬI MAIL
     // =========================================================
     @PostMapping("/api/admin/emails/test-send")
     @ResponseBody
+    @LoggableAction(action = "TEST_SEND_EMAIL", targetType = "EMAIL_SYSTEM", details = "'Gửi mail test tới: ' + #payload['email']")
     public ResponseEntity<?> testSendEmail(@RequestBody Map<String, String> payload) {
         try {
             String toEmail = payload.get("email");
@@ -227,5 +353,7 @@ public class AdminEmailController {
                     .body(Map.of("message", "Lỗi máy chủ khi gửi mail test: " + e.getMessage()));
         }
     }
+
+
 
 }

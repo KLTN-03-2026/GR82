@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html th:replace="~{user-layout :: user_layout(~{::#schedule-content}, '/css/user/user-schedules.css', 'schedules')}"
+    xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div id="schedule-content">
+
+        <main class="schedule-main">
+
+            <!-- Left Content Area -->
+            <section class="schedule-content">
+
+                <!-- 1. VÙNG KẾT QUẢ TRA CỨU (AJAX HOẶC THYMELEAF) -->
+                <div id="search-results-wrapper">
+                    <!-- Kết quả tra cứu theo mã sinh viên (Thymeleaf - Nếu load trang trực tiếp) -->
+                    <div id="initial-results" th:if="${examResults != null and !examResults.isEmpty()}">
+                        <header class="schedule-page-header">
+                            <h1 class="schedule-page-title">Lịch thi của bạn</h1>
+                            <span class="results-count">Tìm thấy <strong th:text="${examResults.size()}">0</strong> môn
+                                thi</span>
+                        </header>
+
+                        <article class="exam-card" th:each="exam : ${examResults}">
+                            <div class="exam-card-header">
+                                <div>
+                                    <div class="exam-course-meta">
+                                        <span class="exam-course-code"
+                                            th:text="${exam.courseCode != null ? exam.courseCode : 'N/A'}">
+                                            CS301
+                                        </span>
+                                        <span class="exam-credit-badge">
+                                            <span th:text="${exam.credit != null ? exam.credit : 'N/A'}">3</span>
+                                            Tín chỉ
+                                        </span>
+                                    </div>
+                                    <h2 class="exam-title"
+                                        th:text="${exam.courseName != null ? exam.courseName : 'Chưa cập nhật tên môn'}">
+                                        Data Structures
+                                    </h2>
+                                    <p class="exam-semester">
+                                        Học kỳ:
+                                        <span th:text="${exam.semester != null ? exam.semester : 'Chưa cập nhật'}">
+                                            Fall 2023
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="exam-date-box">
+                                    <div class="exam-date-label">Ngày thi</div>
+                                    <div class="exam-date-day"
+                                        th:text="${exam.examDate != null ? #temporals.format(exam.examDate, 'dd') : '--'}">
+                                        15
+                                    </div>
+                                    <div class="exam-date-month"
+                                        th:text="${exam.examDate != null ? 'Tháng ' + #temporals.format(exam.examDate, 'MM') : 'N/A'}">
+                                        11
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="exam-info-grid">
+                                <div>
+                                    <div class="exam-info-label">Giờ thi</div>
+                                    <div class="exam-info-value">
+                                        <span class="material-symbols-outlined">schedule</span>
+                                        <span th:text="${exam.examTime != null ? exam.examTime : '--'}">08:00</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="exam-info-label">Phòng thi</div>
+                                    <div class="exam-info-value">
+                                        <span class="material-symbols-outlined">location_on</span>
+                                        <span th:text="${exam.roomName != null ? exam.roomName : '--'}">302</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="exam-info-label">Mã lớp</div>
+                                    <div class="exam-info-value"
+                                        th:text="${exam.classCode != null ? exam.classCode : 'N/A'}">CS301</div>
+                                </div>
+                                <div>
+                                    <div class="exam-info-label">SBD</div>
+                                    <div class="exam-info-value">
+                                        <strong th:text="${exam.seatNumber != null ? exam.seatNumber : '--'}">1</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="exam-note">
+                                <span class="material-symbols-outlined">info</span>
+                                <span>Địa điểm: <strong
+                                        th:text="${exam.location != null ? exam.location : '--'}">DTU</strong></span>
+                            </div>
+
+                            <div class="exam-actions">
+                                <button class="btn btn-outline" type="button"
+                                    th:onclick="'showRoomStudents(' + ${exam.roomId} + ', \'' + ${exam.roomName} + '\')'">
+                                    Xem chi tiết phòng
+                                </button>
+
+                                <button class="btn btn-primary btn-follow-room" type="button"
+                                    th:data-schedule-id="${exam.scheduleId}" th:data-room-id="${exam.roomId}"
+                                    th:onclick="'toggleFollowRoom(' + ${exam.scheduleId} + ',' + ${exam.roomId} + ', this)'"
+                                    th:classappend="${followedRoomIds.contains(exam.roomId)} ? 'btn-followed' : ''">
+                                    <span class="material-symbols-outlined"
+                                        th:text="${followedRoomIds.contains(exam.roomId)} ? 'bookmark_check' : 'bookmark_add'">bookmark_add</span>
+                                    <span>Quan tâm</span>
+                                </button>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Vùng render kết quả bằng AJAX (Nếu tìm kiếm động) -->
+                    <div id="ajax-results-container" style="display: none; margin-bottom: 24px;">
+                        <header class="schedule-page-header">
+                            <h1 class="schedule-page-title" id="ajax-search-title">Kết quả tra cứu</h1>
+                            <button class="lookup-btn-outline"
+                                style="padding: 4px 12px; font-size: 12px; height: auto; width: auto;"
+                                onclick="clearSearchResults()">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">close</span> Xóa kết
+                                quả
+                            </button>
+                        </header>
+                        <div id="ajax-results-list"></div>
+                    </div>
+                </div>
+
+                <!-- 2. VÙNG TẤT CẢ LỊCH THI (LUÔN HIỂN THỊ) -->
+                <div id="all-schedules-section">
+                    <header class="schedule-page-header">
+                        <h1 class="schedule-page-title">Danh mục tất cả môn thi</h1>
+                    </header>
+
+                    <div th:if="${schedulePage != null}">
+                        <article class="exam-card" th:each="schedule : ${schedulePage.content}"
+                            th:id="'schedule-' + ${schedule.id}">
+                            <div class="exam-card-header">
+                                <div>
+                                    <div class="exam-course-meta">
+                                        <span class="exam-course-code"
+                                            th:text="${schedule.courseCode != null ? schedule.courseCode : 'N/A'}">
+                                            CS301
+                                        </span>
+                                        <span class="exam-credit-badge">
+                                            <span
+                                                th:text="${schedule.credit != null ? schedule.credit : 'N/A'}">3</span>
+                                            Tín chỉ
+                                        </span>
+                                    </div>
+                                    <h2 class="exam-title"
+                                        th:text="${schedule.courseName != null ? schedule.courseName : 'Chưa cập nhật tên môn'}">
+                                        Data Structures
+                                    </h2>
+                                    <p class="exam-semester">
+                                        Học kỳ:
+                                        <span
+                                            th:text="${schedule.semester != null ? schedule.semester : 'Chưa cập nhật'}">
+                                            Fall 2023
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="exam-date-box">
+                                    <div class="exam-date-label">Số phòng</div>
+                                    <div class="exam-date-day"
+                                        th:text="${schedule.rooms != null ? schedule.rooms.size() : 0}">
+                                        2
+                                    </div>
+                                    <div class="exam-date-month">Phòng</div>
+                                </div>
+                            </div>
+                            <div class="exam-info-grid">
+                                <div>
+                                    <div class="exam-info-label">Lần thi</div>
+                                    <div class="exam-info-value">
+                                        <span class="material-symbols-outlined">restart_alt</span>
+                                        <span th:text="${schedule.attempt != null ? schedule.attempt : 'N/A'}">1</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="exam-info-label">Sinh viên</div>
+                                    <div class="exam-info-value">
+                                        <span class="material-symbols-outlined">groups</span>
+                                        <span
+                                            th:text="${schedule.totalStudents != null ? schedule.totalStudents : 'N/A'}">120</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="exam-info-label">Cập nhật lúc</div>
+                                    <div class="exam-info-value">
+                                        <span class="material-symbols-outlined">event</span>
+                                        <span
+                                            th:text="${schedule.parsedAt != null ? #temporals.format(schedule.parsedAt, 'dd/MM/yyyy') : 'N/A'}">
+                                            01/01/2026
+                                        </span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="exam-info-label">Mã môn</div>
+                                    <div class="exam-info-value"
+                                        th:text="${schedule.courseCode != null ? schedule.courseCode : 'N/A'}">
+                                        CS301
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="exam-note">
+                                <span class="material-symbols-outlined">info</span>
+                                <span
+                                    th:text="${schedule.notes != null ? schedule.notes : 'Nhập mã sinh viên ở khung bên phải để xem chính xác phòng thi, số báo danh và ca thi của bạn.'}">
+                                    Nhập mã sinh viên ở khung bên phải để xem chính xác phòng thi.
+                                </span>
+                            </div>
+                            <div class="exam-actions">
+                                <button class="btn btn-outline" type="button"
+                                    th:onclick="'showScheduleDetail(' + ${schedule.id} + ')'">
+                                    Xem chi tiết
+                                </button>
+                                <button class="btn btn-primary" type="button"
+                                    th:onclick="'toggleFollowSchedule(' + ${schedule.id} + ', this)'"
+                                    th:classappend="${followedScheduleIds.contains(schedule.id)} ? 'btn-followed' : ''">
+                                    <span class="material-symbols-outlined"
+                                        th:text="${followedScheduleIds.contains(schedule.id)} ? 'bookmark_check' : 'bookmark_add'">bookmark_add</span>
+                                    <span>Quan tâm</span>
+                                </button>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="exam-actions" th:if="${schedulePage != null and schedulePage.totalPages > 1}">
+                        <a class="btn btn-outline" th:if="${schedulePage.hasPrevious()}"
+                            th:href="@{/user/schedules(page=${schedulePage.number - 1}, size=${schedulePage.size})}">
+                            Trang trước
+                        </a>
+                        <span class="btn btn-outline">
+                            Trang <span th:text="${schedulePage.number + 1}">1</span>
+                            /
+                            <span th:text="${schedulePage.totalPages}">1</span>
+                        </span>
+                        <a class="btn btn-outline" th:if="${schedulePage.hasNext()}"
+                            th:href="@{/user/schedules(page=${schedulePage.number + 1}, size=${schedulePage.size})}">
+                            Trang sau
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Không có dữ liệu -->
+                <article class="exam-card" th:if="${(schedulePage == null or schedulePage.content.isEmpty())}">
+                    <div class="exam-note">
+                        <span class="material-symbols-outlined">info</span>
+                        <span>Chưa có dữ liệu lịch thi để hiển thị.</span>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Right Sidebar -->
+            <aside class="schedule-sidebar">
+                <div class="lookup-card">
+                    <h3 class="lookup-title">Tra cứu lịch thi</h3>
+                    <form class="lookup-form" id="mainLookupForm" onsubmit="handleSearch(event)">
+                        <div class="lookup-form-group">
+                            <label class="lookup-label" for="studentCode">Mã sinh viên</label>
+                            <div style="position: relative;">
+                                <input class="lookup-control" id="studentCode" name="studentCode"
+                                    placeholder="Nhập mã SV..." type="text" th:value="${studentCode}"
+                                    autocomplete="off" />
+                                <div id="quick-search-dropdown" class="quick-dropdown"></div>
+                            </div>
+                        </div>
+
+                        <div class="lookup-form-group">
+                            <label class="lookup-label" for="semester">Học kỳ</label>
+                            <select class="lookup-control" id="semester" name="semester">
+                                <option value="">Tất cả học kỳ</option>
+                                <option value="1" th:selected="${semester == '1'}">Học kỳ 1</option>
+                                <option value="2" th:selected="${semester == '2'}">Học kỳ 2</option>
+                                <option value="3" th:selected="${semester == '3'}">Học kỳ 3</option>
+                            </select>
+                        </div>
+
+                        <div class="lookup-form-group">
+                            <label class="lookup-label" for="courseFilter">Lọc theo môn học</label>
+                            <input class="lookup-control" id="courseFilter" name="courseFilter"
+                                placeholder="VD: CS301..." type="text" th:value="${courseFilter}" />
+                        </div>
+
+                        <div class="lookup-actions">
+                            <button class="lookup-btn lookup-btn-primary" type="submit" id="searchBtn">
+                                <span class="material-symbols-outlined">search</span>
+                                <span id="searchBtnText">Tìm kiếm lịch thi</span>
+                            </button>
+
+                            <button class="lookup-btn lookup-btn-outline" type="button">
+                                <span class="material-symbols-outlined">smart_toy</span>
+                                Hỏi trợ lý AI
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </aside>
+
+        </main>
+
+        <!-- Modal xem chi tiết lịch thi (Phòng thi) -->
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-box" id="detailModal">
+                <div class="modal-header">
+                    <h3>Phòng thi cho môn <span id="subjectCode" style="color: var(--primary);"></span></h3>
+                    <div class="close-modal" id="closeModalBtn"><span class="material-symbols-outlined">close</span>
+                    </div>
+                </div>
+
+                <div class="modal-body">
+                    <div class="modal-search-wrapper">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" id="roomSearchInput" placeholder="Nhập số phòng, mssv,...">
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <p>Mã môn</p>
+                            <h4 id="detail-courseCode">--</h4>
+                        </div>
+                        <div class="info-item">
+                            <p>Tín chỉ</p>
+                            <h4 id="detail-credit">--</h4>
+                        </div>
+                        <div class="info-item">
+                            <p>Học kỳ</p>
+                            <h4 id="detail-semester">--</h4>
+                        </div>
+                        <div class="info-item">
+                            <p>Lần thi</p>
+                            <h4 id="detail-attempt">--</h4>
+                        </div>
+                    </div>
+
+                    <h4 class="section-title">Danh sách phòng thi được phân bổ</h4>
+                    <div class="room-grid" id="roomGrid">
+                        <!-- Danh sách phòng thi sẽ được render ở đây -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal xem danh sách sinh viên trong phòng -->
+        <div class="modal-overlay" id="studentModalOverlay" style="z-index: 1100;">
+            <div class="modal-box" style="width: 700px; max-width: 95vw;">
+                <div class="modal-header">
+                    <h3>Danh sách sinh viên <span id="studentModalRoomName" style="color: var(--primary);"></span></h3>
+                    <div class="modal-search-wrapper" style="margin: 0 20px; flex: 1; max-width: 300px;">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" id="studentSearchInput" placeholder="Tìm tên hoặc mã SV...">
+                    </div>
+                    <div class="close-modal" id="closeStudentModalBtn"><span
+                            class="material-symbols-outlined">close</span></div>
+                </div>
+                <div class="modal-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="student-table">
+                            <thead>
+                                <tr>
+                                    <th width="10%">SBD</th>
+                                    <th width="20%">Mã SV</th>
+                                    <th width="40%">Họ và tên</th>
+                                    <th width="30%">Lớp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-table-body">
+                                <!-- Danh sách sinh viên sẽ được render ở đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            let currentScheduleId = null;
+            // Dữ liệu quan tâm được truyền từ Backend
+            let followedScheduleIds = /*[[${followedScheduleIds}]]*/[];
+            let followedRoomIds = /*[[${followedRoomIds}]]*/[];
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const modalOverlay = document.getElementById('modalOverlay');
+                const closeModalBtn = document.getElementById('closeModalBtn');
+                const studentModalOverlay = document.getElementById('studentModalOverlay');
+                const closeStudentModalBtn = document.getElementById('closeStudentModalBtn');
+
+                if (closeModalBtn) {
+                    closeModalBtn.addEventListener('click', () => modalOverlay.classList.remove('active'));
+                }
+
+                if (modalOverlay) {
+                    modalOverlay.addEventListener('click', (e) => {
+                        if (e.target === modalOverlay) modalOverlay.classList.remove('active');
+                    });
+                }
+
+                if (closeStudentModalBtn) {
+                    closeStudentModalBtn.addEventListener('click', () => studentModalOverlay.classList.remove('active'));
+                }
+
+                if (studentModalOverlay) {
+                    studentModalOverlay.addEventListener('click', (e) => {
+                        if (e.target === studentModalOverlay) studentModalOverlay.classList.remove('active');
+                    });
+                }
+
+                // Logic tìm kiếm phòng thi trong modal
+                const roomSearchInput = document.getElementById('roomSearchInput');
+                if (roomSearchInput) {
+                    roomSearchInput.addEventListener('input', function () {
+                        const term = this.value.toLowerCase().trim();
+                        const cards = document.querySelectorAll('.room-card-mini');
+
+                        // Xóa highlight cũ
+                        cards.forEach(c => c.classList.remove('room-highlight'));
+
+                        // 1. Lọc theo tên phòng/cơ sở (Local Search)
+                        cards.forEach(card => {
+                            const text = card.innerText.toLowerCase();
+                            card.style.display = text.includes(term) ? '' : 'none';
+                        });
+
+                        // 2. Tra cứu MSSV (Deep Search) - Chỉ chạy khi term đủ dài (thường MSSV >= 8 ký tự)
+                        if (term.length >= 8 && currentScheduleId) {
+                            fetch(`/api/user/schedules/${currentScheduleId}/find-student?studentCode=${term}`)
+                                .then(res => res.ok ? res.json() : null)
+                                .then(data => {
+                                    if (data) {
+                                        const foundCard = Array.from(cards).find(c => {
+                                            const name = c.querySelector('.room-name').innerText;
+                                            return name === data.roomName;
+                                        });
+
+                                        if (foundCard) {
+                                            foundCard.style.display = ''; // Hiện lại nếu đang bị ẩn
+                                            foundCard.classList.add('room-highlight');
+
+                                            // Cuộn tới thẻ đó
+                                            foundCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                                            // Có thể hiển thị thêm thông tin SBD tạm thời
+                                            let badge = foundCard.querySelector('.student-find-badge');
+                                            if (!badge) {
+                                                badge = document.createElement('div');
+                                                badge.className = 'student-find-badge';
+                                                foundCard.appendChild(badge);
+                                            }
+                                            badge.innerHTML = `<span class="material-symbols-outlined">person</span> ${data.fullName} - SBD: <strong>${data.seatNumber}</strong>`;
+                                        }
+                                    }
+                                });
+                        } else {
+                            // Xóa badge nếu term ngắn lại
+                            document.querySelectorAll('.student-find-badge').forEach(b => b.remove());
+                        }
+                    });
+                }
+
+                // Logic tìm kiếm sinh viên trong modal
+                const studentSearchInput = document.getElementById('studentSearchInput');
+                if (studentSearchInput) {
+                    studentSearchInput.addEventListener('input', function () {
+                        const term = this.value.toLowerCase().trim();
+                        const rows = document.querySelectorAll('#student-table-body tr');
+                        rows.forEach(row => {
+                            if (row.cells.length < 4) return; // Bỏ qua dòng thông báo/đang tải
+                            const text = row.innerText.toLowerCase();
+                            row.style.display = text.includes(term) ? '' : 'none';
+                        });
+                    });
+                }
+
+                // Logic Quick Preview khi gõ MSSV ở Sidebar
+                const sidebarMSSV = document.getElementById('studentCode');
+                const quickDropdown = document.getElementById('quick-search-dropdown');
+                if (sidebarMSSV && quickDropdown) {
+                    sidebarMSSV.addEventListener('input', debounce(function () {
+                        const code = this.value.trim();
+                        if (code.length < 5) {
+                            quickDropdown.classList.remove('active');
+                            return;
+                        }
+
+                        fetch(`/api/user/quick-search?studentCode=${code}`)
+                            .then(res => res.json())
+                            .then(results => {
+                                if (results.length > 0) {
+                                    quickDropdown.innerHTML = results.map(res => `
+                                        <div class="quick-item" onclick="selectQuickResult('${res.studentCode}')">
+                                            <span class="material-symbols-outlined">person_search</span>
+                                            <div class="quick-info">
+                                                <div class="quick-subject">${res.courseName}</div>
+                                                <div class="quick-meta">${res.studentCode} - Phòng ${res.roomName}</div>
+                                            </div>
+                                        </div>
+                                    `).join('');
+                                    quickDropdown.classList.add('active');
+                                } else {
+                                    quickDropdown.classList.remove('active');
+                                }
+                            });
+                    }, 300));
+
+                    // Đóng dropdown khi click ra ngoài
+                    document.addEventListener('click', (e) => {
+                        if (!sidebarMSSV.contains(e.target) && !quickDropdown.contains(e.target)) {
+                            quickDropdown.classList.remove('active');
+                        }
+                    });
+                }
+            });
+
+            // Utils
+            function debounce(func, wait) {
+                let timeout;
+                return function () {
+                    const context = this, args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), wait);
+                };
+            }
+
+            function selectQuickResult(code) {
+                const sidebarMSSV = document.getElementById('studentCode');
+                if (sidebarMSSV) {
+                    sidebarMSSV.value = code;
+                    document.getElementById('quick-search-dropdown').classList.remove('active');
+                    handleSearch(new Event('submit'));
+                }
+            }
+
+            function clearSearchResults() {
+                const ajaxContainer = document.getElementById('ajax-results-container');
+                const initialResults = document.getElementById('initial-results');
+                if (ajaxContainer) ajaxContainer.style.display = 'none';
+                if (initialResults) initialResults.style.display = 'none';
+            }
+
+            async function handleSearch(event) {
+                if (event) event.preventDefault();
+
+                const studentCode = document.getElementById('studentCode').value.trim();
+                const semester = document.getElementById('semester').value;
+                const courseFilter = document.getElementById('courseFilter').value.trim();
+
+                const searchBtn = document.getElementById('searchBtn');
+                const searchBtnText = document.getElementById('searchBtnText');
+                const ajaxContainer = document.getElementById('ajax-results-container');
+                const ajaxList = document.getElementById('ajax-results-list');
+                const initialResults = document.getElementById('initial-results');
+
+                // UI Loading
+                if (searchBtn) searchBtn.disabled = true;
+                if (searchBtnText) searchBtnText.textContent = "Đang tra cứu...";
+                if (initialResults) initialResults.style.display = 'none';
+
+                ajaxContainer.style.display = 'block';
+                ajaxList.innerHTML = '<div style="padding: 40px; text-align: center;"><div class="loading-spinner"></div><p style="margin-top: 10px; color: var(--text-muted);">Đang tải lịch thi của bạn...</p></div>';
+
+                try {
+                    const response = await fetch(`/api/user/quick-search?studentCode=${studentCode}&semester=${semester}&courseFilter=${encodeURIComponent(courseFilter)}`);
+                    let results = await response.json();
+
+                    if (results.length === 0) {
+                        ajaxList.innerHTML = `
+                            <article class="exam-card">
+                                <div class="exam-note" style="justify-content: center; padding: 30px;">
+                                    <span class="material-symbols-outlined" style="font-size: 32px; color: var(--text-faint);">sentiment_dissatisfied</span>
+                                    <div style="margin-left: 15px;">
+                                        <h4 style="margin:0; color: var(--heading-main);">Không tìm thấy lịch thi</h4>
+                                        <p style="margin:5px 0 0; font-size: 13px;">Hãy kiểm tra lại mã sinh viên hoặc bộ lọc của bạn.</p>
+                                    </div>
+                                </div>
+                            </article>`;
+                    } else {
+                        ajaxList.innerHTML = results.map(exam => {
+                            const isPersonal = exam.studentCode !== null;
+
+                            return `
+                                <article class="exam-card result-highlight-animate">
+                                    <div class="exam-card-header">
+                                        <div>
+                                            <div class="exam-course-meta">
+                                                <span class="exam-course-code">${exam.courseCode || 'N/A'}</span>
+                                                <span class="exam-credit-badge">${exam.credit || '0'} Tín chỉ</span>
+                                            </div>
+                                            <h2 class="exam-title">${exam.courseName || 'Chưa cập nhật'}</h2>
+                                            <p class="exam-semester">Học kỳ: <span>${exam.semester || '--'}</span></p>
+                                        </div>
+                                        <div class="exam-date-box">
+                                            ${isPersonal ? `
+                                                <div class="exam-date-label">Ngày thi</div>
+                                                <div class="exam-date-day">${formatDay(exam.examDate)}</div>
+                                                <div class="exam-date-month">${formatMonth(exam.examDate)}</div>
+                                            ` : `
+                                                <div class="exam-date-label">Số phòng</div>
+                                                <div class="exam-date-day">${exam.seatNumber || '0'}</div>
+                                                <div class="exam-date-month">Phòng</div>
+                                            `}
+                                        </div>
+                                    </div>
+                                    <div class="exam-info-grid">
+                                        ${isPersonal ? `
+                                            <div>
+                                                <div class="exam-info-label">Giờ thi</div>
+                                                <div class="exam-info-value">
+                                                    <span class="material-symbols-outlined">schedule</span>
+                                                    <span>${exam.examTime || '--'}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="exam-info-label">Phòng thi</div>
+                                                <div class="exam-info-value">
+                                                    <span class="material-symbols-outlined">location_on</span>
+                                                    <span>${exam.roomName || '--'}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="exam-info-label">Mã lớp</div>
+                                                <div class="exam-info-value">${exam.classCode || 'N/A'}</div>
+                                            </div>
+                                            <div>
+                                                <div class="exam-info-label">SBD</div>
+                                                <div class="exam-info-value"><strong>${exam.seatNumber || '--'}</strong></div>
+                                            </div>
+                                        ` : `
+                                            <div>
+                                                <div class="exam-info-label">Lần thi</div>
+                                                <div class="exam-info-value">
+                                                    <span class="material-symbols-outlined">restart_alt</span>
+                                                    <span>${exam.attempt || '1'}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="exam-info-label">Sinh viên</div>
+                                                <div class="exam-info-value">
+                                                    <span class="material-symbols-outlined">groups</span>
+                                                    <span>${exam.note || 'N/A'}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="exam-info-label">Cập nhật lúc</div>
+                                                <div class="exam-info-value">
+                                                    <span class="material-symbols-outlined">event</span>
+                                                    <span>${new Date().toLocaleDateString('vi-VN')}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="exam-info-label">Mã môn</div>
+                                                <div class="exam-info-value">${exam.courseCode || 'N/A'}</div>
+                                            </div>
+                                        `}
+                                    </div>
+                                    <div class="exam-note">
+                                        <span class="material-symbols-outlined">info</span>
+                                        ${isPersonal ? `
+                                            <span>Địa điểm: <strong>${exam.location || '--'}</strong> ${exam.note ? '- ' + exam.note : ''}</span>
+                                        ` : `
+                                            <span>Nhập mã sinh viên ở khung bên phải để xem chính xác phòng thi, số báo danh và ca thi của bạn.</span>
+                                        `}
+                                    </div>
+                                    <div class="exam-actions">
+                                        ${isPersonal ? `
+                                            <button class="btn btn-outline" type="button" onclick="showRoomStudents(${exam.roomId}, '${exam.roomName}')">
+                                                Xem chi tiết phòng
+                                            </button>
+                                            <button class="btn btn-primary btn-follow-room ${followedRoomIds.includes(exam.roomId) ? 'btn-followed' : ''}" 
+                                                type="button"
+                                                onclick="toggleFollowRoom(${exam.scheduleId}, ${exam.roomId}, this)">
+                                                <span class="material-symbols-outlined">${followedRoomIds.includes(exam.roomId) ? 'bookmark_check' : 'bookmark_add'}</span>
+                                                <span>Quan tâm</span>
+                                            </button>
+                                        ` : `
+                                            <button class="btn btn-outline" type="button" onclick="showScheduleDetail(${exam.scheduleId})">
+                                                Xem chi tiết
+                                            </button>
+                                            <button class="btn btn-primary ${followedScheduleIds.includes(exam.scheduleId) ? 'btn-followed' : ''}" 
+                                                type="button"
+                                                onclick="toggleFollowSchedule(${exam.scheduleId}, this)">
+                                                <span class="material-symbols-outlined">${followedScheduleIds.includes(exam.scheduleId) ? 'bookmark_check' : 'bookmark_add'}</span>
+                                                <span>Quan tâm</span>
+                                            </button>
+                                        `}
+                                    </div>
+                                </article>
+                            `;
+                        }).join('');
+
+                        // Cuộn lên kết quả
+                        ajaxContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                } catch (err) {
+                    console.error(err);
+                    ajaxList.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">Lỗi kết nối máy chủ!</p>`;
+                } finally {
+                    if (searchBtn) searchBtn.disabled = false;
+                    if (searchBtnText) searchBtnText.textContent = "Tìm kiếm lịch thi";
+                }
+            }
+
+            function formatDay(dateStr) {
+                if (!dateStr) return '--';
+                return dateStr.split('-')[2];
+            }
+            function formatMonth(dateStr) {
+                if (!dateStr) return 'N/A';
+                const m = parseInt(dateStr.split('-')[1]);
+                return 'Tháng ' + m;
+            }
+
+            function showScheduleDetail(scheduleId) {
+                currentScheduleId = scheduleId;
+                const modalOverlay = document.getElementById('modalOverlay');
+                const subjectCodeDisplay = document.getElementById('subjectCode');
+                const roomGrid = document.getElementById('roomGrid');
+
+                // Reset search input
+                const roomSearchInput = document.getElementById('roomSearchInput');
+                if (roomSearchInput) roomSearchInput.value = '';
+
+                const detailCourseCode = document.getElementById('detail-courseCode');
+                const detailCredit = document.getElementById('detail-credit');
+                const detailSemester = document.getElementById('detail-semester');
+                const detailAttempt = document.getElementById('detail-attempt');
+
+                modalOverlay.classList.add('active');
+                if (subjectCodeDisplay) subjectCodeDisplay.textContent = "Đang tải...";
+                if (roomGrid) roomGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 20px;">Đang tải danh sách phòng thi...</p>';
+
+                fetch('/api/user/schedules/' + scheduleId)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Không tìm thấy dữ liệu lịch thi");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (subjectCodeDisplay) subjectCodeDisplay.textContent = data.courseName;
+                        if (detailCourseCode) detailCourseCode.textContent = data.courseCode || '--';
+                        if (detailCredit) detailCredit.textContent = (data.credit || '0') + ' tín chỉ';
+                        if (detailSemester) detailSemester.textContent = data.semester || '--';
+                        if (detailAttempt) detailAttempt.textContent = 'Lần ' + (data.attempt || '1');
+
+                        if (roomGrid) {
+                            roomGrid.innerHTML = '';
+                            if (data.rooms && data.rooms.length > 0) {
+                                data.rooms.forEach(room => {
+                                    const dateStr = room.examDate || "Chưa xếp ngày";
+                                    const timeStr = room.examTime || "Chưa xếp giờ";
+                                    const locationStr = room.location || "Chưa rõ cơ sở";
+
+                                    const roomCard = `
+                                        <div class="room-card-mini">
+                                            <div class="room-card-mini-header">
+                                                <span class="room-name">${room.roomName}</span>
+                                                <span class="badge-ready">SẴN SÀNG</span>
+                                            </div>
+                                            <div class="room-info-list">
+                                                <span><span class="material-symbols-outlined">location_on</span> ${locationStr}</span>
+                                                <span><span class="material-symbols-outlined">calendar_today</span> ${dateStr}</span>
+                                                <span><span class="material-symbols-outlined">schedule</span> ${timeStr}</span>
+                                            </div>
+                                            <button type="button" class="btn-room-detail-mini" onclick="showRoomStudents(${room.id}, '${room.roomName}')">
+                                                <span class="material-symbols-outlined">groups</span> Danh sách SV
+                                            </button>
+                                        </div>
+                                    `;
+                                    roomGrid.insertAdjacentHTML('beforeend', roomCard);
+                                });
+                            } else {
+                                roomGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 20px;">Môn này chưa có thông tin phòng thi chi tiết.</p>';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        if (roomGrid) roomGrid.innerHTML = `<p style="grid-column: 1/-1; color:red; text-align:center; padding: 20px;">Lỗi: ${error.message}</p>`;
+                    });
+            }
+
+            function showRoomStudents(roomId, roomName) {
+                const studentModalOverlay = document.getElementById('studentModalOverlay');
+                const studentModalRoomName = document.getElementById('studentModalRoomName');
+                const studentTableBody = document.getElementById('student-table-body');
+
+                if (studentModalRoomName && roomName) {
+                    studentModalRoomName.textContent = "- Phòng " + roomName;
+                } else if (studentModalRoomName) {
+                    studentModalRoomName.textContent = "";
+                }
+
+                studentModalOverlay.classList.add('active');
+                if (studentTableBody) studentTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Đang tải danh sách sinh viên...</td></tr>';
+
+                fetch('/api/user/rooms/' + roomId + '/students')
+                    .then(res => {
+                        if (!res.ok) throw new Error("Không thể tải danh sách sinh viên");
+                        return res.json();
+                    })
+                    .then(students => {
+                        if (studentTableBody) {
+                            studentTableBody.innerHTML = '';
+                            if (students && students.length > 0) {
+                                students.forEach(st => {
+                                    studentTableBody.innerHTML += `
+                                        <tr>
+                                            <td style="text-align:center;"><strong>${st.seatNumber || ''}</strong></td>
+                                            <td>${st.studentCode || ''}</td>
+                                            <td>${st.fullName || ''}</td>
+                                            <td>${st.studentClass || ''}</td>
+                                        </tr>
+                                    `;
+                                });
+                            } else {
+                                studentTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Phòng này chưa có sinh viên.</td></tr>';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        if (studentTableBody) studentTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:red;">Lỗi khi tải dữ liệu!</td></tr>';
+                    });
+            }
+
+            function toggleFollowSchedule(scheduleId, btn) {
+                const icon = btn.querySelector('.material-symbols-outlined');
+                const textSpan = btn.querySelector('span:not(.material-symbols-outlined)');
+                const isFollowing = btn.classList.contains('btn-followed');
+
+                if (isFollowing) {
+                    alert("Để hủy quan tâm, vui lòng truy cập trang 'Lịch thi của tôi'");
+                    return;
+                }
+
+                fetch(`/api/user/schedules/${scheduleId}/follow`, { method: 'POST' })
+                    .then(res => {
+                        if (res.status === 401) {
+                            alert("Vui lòng đăng nhập để thực hiện chức năng này!");
+                            location.href = "/login";
+                            return;
+                        }
+                        if (!res.ok) throw new Error("Thất bại");
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'already_in_my_exams') {
+                            alert(data.message);
+                            return;
+                        }
+
+                        btn.classList.add('btn-followed');
+                        if (icon) icon.innerText = 'bookmark_check';
+                        if (textSpan) textSpan.innerText = 'Quan tâm';
+
+                        // Đồng bộ dữ liệu local
+                        if (!followedScheduleIds.includes(scheduleId)) {
+                            followedScheduleIds.push(scheduleId);
+                        }
+
+                        if (data.status === 'upgraded') {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }
+
+            function toggleFollowRoom(scheduleId, roomId, btn) {
+                const icon = btn.querySelector('.material-symbols-outlined');
+                const textSpan = btn.querySelector('span:not(.material-symbols-outlined)');
+                const isFollowing = btn.classList.contains('btn-followed');
+
+                if (isFollowing) {
+                    alert("Để hủy theo dõi, vui lòng truy cập trang 'Lịch thi của tôi'");
+                    return;
+                }
+
+                fetch(`/api/user/schedules/${scheduleId}/follow?roomId=${roomId}`, { method: 'POST' })
+                    .then(res => {
+                        if (res.status === 401) {
+                            alert("Vui lòng đăng nhập!");
+                            location.href = "/login";
+                            return;
+                        }
+                        if (!res.ok) throw new Error("Thất bại");
+                        return res.json();
+                    })
+                    .then(data => {
+                        btn.classList.add('btn-followed');
+                        if (icon) icon.innerText = 'bookmark_check';
+                        if (textSpan) textSpan.innerText = 'Quan tâm';
+
+                        // Đồng bộ dữ liệu local
+                        if (!followedRoomIds.includes(roomId)) {
+                            followedRoomIds.push(roomId);
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }
+
+            // Auto-focus and open detail if targetScheduleId is present
+            document.addEventListener('DOMContentLoaded', function () {
+                const targetId = /*[[${targetScheduleId ?: 'null'}]]*/ 'null';
+                if (targetId && targetId !== 'null') {
+                    setTimeout(() => {
+                        const element = document.getElementById('schedule-' + targetId);
+                        if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                            // Trigger detail view
+                            const detailBtn = element.querySelector('.btn-view-detail') || element;
+                            if (detailBtn) detailBtn.click();
+                        }
+                    }, 500); // Wait for list to be fully rendered
+                }
+            });
+        </script>
+</body>
+
+</html>

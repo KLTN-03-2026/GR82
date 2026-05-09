@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- BẮT BUỘC: Khai báo 2 thư viện Thymeleaf và Spring Security -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<!-- Bắt đầu mảnh ghép Header. Tên là 'top_navbar' -->
+<header class="top-header" th:fragment="top_navbar">
+
+    <!-- ================= LỆCH TRÁI: LOGO & TÌM KIẾM ================= -->
+    <div class="header-left">
+        <h3>Hệ thống DTU</h3>
+        <div class="search-bar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Tìm kiếm dữ liệu...">
+        </div>
+    </div>
+
+    <!-- ================= LỆCH PHẢI: CÔNG CỤ & TÀI KHOẢN ================= -->
+    <div class="header-right">
+        <!-- Nút Chuông thông báo: Ai cũng thấy (hoặc bạn có thể thêm sec:authorize="isAuthenticated()" để giấu đi với Khách) -->
+        <i class="fa-regular fa-bell icon-btn"></i>
+
+        <!-- Nút Cài đặt: CHỈ ADMIN mới nhìn thấy -->
+        <i sec:authorize="hasRole('ADMIN')" class="fa-solid fa-gear icon-btn"></i>
+
+        <!-- ================= MENU TÀI KHOẢN (DROPDOWN) ================= -->
+        <div class="account-dropdown-wrapper">
+
+            <!-- TRẠNG THÁI 1: DÀNH CHO NGƯỜI ĐÃ ĐĂNG NHẬP (ADMIN & STUDENT) -->
+            <div sec:authorize="isAuthenticated()" class="dropdown-trigger">
+                <div class="user-profile">
+                        <span class="user-name">
+                            <!-- In Tên thật từ Database -->
+                            <span sec:authentication="principal.fullName">Tên Người Dùng</span><br>
+
+                            <!-- Hiển thị chức danh tùy theo Role -->
+                            <small sec:authorize="hasRole('ADMIN')">Quản trị viên</small>
+                            <small sec:authorize="hasRole('STUDENT')">Sinh viên</small>
+                        </span>
+
+                    <!-- Đổi icon Avatar tùy theo Role cho sinh động -->
+                    <div class="avatar">
+                        <i sec:authorize="hasRole('ADMIN')" class="fa-solid fa-user-shield"></i>
+                        <i sec:authorize="hasRole('STUDENT')" class="fa-solid fa-user-graduate"></i>
+                    </div>
+                </div>
+
+                <!-- Danh sách thả xuống -->
+                <ul class="dropdown-menu">
+                    <li class="dropdown-header">
+                        <strong sec:authentication="principal.fullName">Họ Tên</strong>
+                        <!-- In Email từ Database -->
+                        <span class="text-gray" sec:authentication="principal.email">email@dtu.edu.vn</span>
+                    </li>
+                    <hr>
+
+                    <!-- Menu riêng cho Admin -->
+                    <th:block sec:authorize="hasRole('ADMIN')">
+                        <li><a th:href="@{/admin/dashboard}"><i class="fa-solid fa-gauge-high"></i> Về Trang quản trị</a></li>
+                    </th:block>
+
+                    <!-- Menu chung / Sinh viên -->
+                    <li><a th:href="@{/profile}"><i class="fa-regular fa-id-badge"></i> Hồ sơ cá nhân</a></li>
+                    <th:block sec:authorize="hasRole('STUDENT')">
+                        <li><a th:href="@{/my-exams}"><i class="fa-regular fa-calendar-check"></i> Lịch thi quan tâm</a></li>
+                    </th:block>
+                    <th:block sec:authorize="hasRole('STUDENT')">
+                        <li><a th:href="@{/my-documents}"><i class="fa-regular fa-calendar-check"></i> Tài liệu của tôi</a></li>
+                    </th:block>
+                    <hr>
+
+                    <!-- Nút Đăng xuất bắt buộc dùng Form POST -->
+                    <li>
+                        <form th:action="@{/logout}" method="post">
+                            <button type="submit" class="text-red">
+                                <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- TRẠNG THÁI 2: DÀNH CHO KHÁCH VÃNG LAI (CHƯA ĐĂNG NHẬP) -->
+            <div sec:authorize="!isAuthenticated()" class="dropdown-trigger">
+                <div class="user-profile">
+                    <span class="user-name">Khách<br><small>Chưa đăng nhập</small></span>
+                    <div class="avatar"><i class="fa-solid fa-user-secret"></i></div>
+                </div>
+                <ul class="dropdown-menu">
+                    <li><a th:href="@{/login}"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</a></li>
+                    <li><a th:href="@{/register}"><i class="fa-solid fa-user-pen"></i> Đăng ký</a></li>
+                </ul>
+            </div>
+
+        </div>
+        <!-- KẾT THÚC KHỐI MENU TÀI KHOẢN -->
+
+        <!-- ================= NÚT HÀNH ĐỘNG (CALL TO ACTION) ================= -->
+
+        <!-- Nút Cào Dữ Liệu: Dành cho Admin -->
+        <button sec:authorize="hasRole('ADMIN')" class="btn-primary" onclick="startCrawl()">
+            <i class="fa-solid fa-bolt" style="margin-right: 5px;"></i> Cào dữ liệu
+        </button>
+
+        <!-- Nút Tra Cứu: Dành cho Sinh viên (Dùng thẻ <a> với class btn-primary để giao diện đồng bộ) -->
+        <a sec:authorize="hasRole('STUDENT')" th:href="@{/search}" class="btn-primary" style="background: #10b981; text-decoration: none; display: flex; align-items: center;">
+            <i class="fa-solid fa-magnifying-glass" style="margin-right: 5px;"></i> Tra cứu lịch thi
+        </a>
+
+    </div>
+</header>
+
+</body>
+</html>

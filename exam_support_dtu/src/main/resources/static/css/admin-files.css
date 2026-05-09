@@ -159,6 +159,93 @@ body {
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
+/* ==========================================================================
+   BẢNG THỐNG KÊ MINI (BENTO STATS)
+   ========================================================================== */
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-box {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-4px);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+}
+
+.stat-text p {
+    font-size: 11px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.stat-text h4 {
+    font-size: 24px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* TIỆN ÍCH MÀU SẮC (Dùng chung cho Stat-box) */
+.bg-red-light {
+    background: #fef2f2;
+}
+
+.text-red {
+    color: #b91c1c;
+}
+
+.bg-green-light {
+    background: #ecfdf5;
+}
+
+.text-green {
+    color: #15803d;
+}
+
+.bg-blue-light {
+    background: #eff6ff;
+}
+
+.text-blue {
+    color: #2563eb;
+}
+
+.bg-orange-light {
+    background: #fff7ed;
+}
+
+.text-orange {
+    color: #c2410c;
+}
+
+
 /* MAIN CONTENT */
 .main-content {
     display: flex;
@@ -166,8 +253,17 @@ body {
     padding: 0 40px 15px;
     flex: 1;
     min-width: 0;
-    overflow-y: auto;
+    overflow-y: hidden !important;
 }
+
+#file-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    /* Bắt buộc để không bị tràn thẻ cha */
+}
+
 
 /* HEADER */
 .top-header {
@@ -176,6 +272,7 @@ body {
     align-items: center;
     padding: 15px 0 10px;
     margin-bottom: 15px;
+    flex-shrink: 0;
 }
 
 .header-left {
@@ -324,15 +421,11 @@ body {
 .page-header-wrapper {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-}
-
-.page-title h2 {
-    font-size: 32px;
-    font-weight: 800;
-    color: #0f172a;
-    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    align-items: flex-end;
 }
 
 .text-subtitle {
@@ -350,12 +443,13 @@ body {
 /* Ô tìm kiếm */
 .table-search {
     background: #ffffff;
-    padding: 10px 16px;
-    border-radius: 12px;
+    padding: 0 16px;
+    border-radius: 8px;
     border: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
-    width: 280px;
+    width: 320px;
+    height: 42px;
     transition: all 0.2s;
 }
 
@@ -387,11 +481,15 @@ body {
 /* Bảng dữ liệu */
 .table-container {
     background: #ffffff;
-    border-radius: 20px;
-    padding: 24px;
+    border-radius: 16px;
+    padding: 20px 24px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
     width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .data-table {
@@ -686,16 +784,24 @@ body {
 }
 
 .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    gap: 8px;
     background: #b91c1c;
     color: #fff;
     border: none;
-    padding: 12px 24px;
+    padding: 0 20px;
+    height: 42px;
     border-radius: 8px;
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 4px 6px -1px rgba(185, 28, 28, 0.2);
+    white-space: nowrap;
+    /* Không bao giờ rớt dòng */
 }
 
 .btn-primary:hover {
@@ -704,15 +810,21 @@ body {
 }
 
 .btn-outline {
-    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     background: transparent;
     border: 1px solid #e2e8f0;
-    padding: 12px;
+    padding: 0 20px;
+    height: 42px;
     border-radius: 8px;
     font-weight: 600;
+    font-size: 14px;
     color: #475569;
     cursor: pointer;
     transition: 0.2s;
+    white-space: nowrap;
 }
 
 .btn-outline:hover {
@@ -720,9 +832,109 @@ body {
     color: #0f172a;
 }
 
+/* Nút Lọc khi đang active (có filter đang áp dụng) */
+.btn-outline.filter-active {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
 
 /* ==========================================================================
-   MODAL CHI TIẾT FILE (MINI APP EXCEL) - ĐÃ DỌN DẸP SẠCH SẼ
+   FILTER DROPDOWN MENU (Sổ ngay dưới nút Lọc)
+   ========================================================================== */
+.filter-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 240px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    z-index: 200;
+    padding: 6px 0;
+    animation: filterDropIn 0.18s ease-out;
+}
+
+.filter-dropdown.show {
+    display: block;
+}
+
+@keyframes filterDropIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.filter-dropdown-header {
+    padding: 10px 16px 6px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.filter-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+}
+
+.filter-dropdown-item:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.filter-dropdown-item.active {
+    background: #fef2f2;
+    color: #b91c1c;
+    font-weight: 700;
+}
+
+.filter-dropdown-item.active::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 11px;
+    margin-left: auto;
+    color: #b91c1c;
+}
+
+.filter-dropdown-item i {
+    width: 18px;
+    text-align: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.filter-dropdown-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 4px 12px;
+}
+
+.filter-dropdown-clear {
+    color: #94a3b8;
+}
+
+.filter-dropdown-clear:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+
+/* ==========================================================================
+   MODAL CHI TIẾT FILE (MINI APP EXCEL)
    ========================================================================== */
 
 .modal-overlay {

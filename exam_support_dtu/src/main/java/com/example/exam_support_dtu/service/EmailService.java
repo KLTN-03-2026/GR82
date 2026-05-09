@@ -1,13 +1,22 @@
 package com.example.exam_support_dtu.service;
 
+import com.example.exam_support_dtu.entity.EmailLog;
 import com.example.exam_support_dtu.entity.EmailTemplate;
+import com.example.exam_support_dtu.repository.EmailLogRepository;
 import com.example.exam_support_dtu.repository.EmailTemplateRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -18,10 +27,11 @@ public class EmailService {
 
     // Repository để lấy nội dung mẫu Email từ Database
     private final EmailTemplateRepository emailTemplateRepository;
-
-    public EmailService(JavaMailSender javaMailSender, EmailTemplateRepository emailTemplateRepository) {
+    private final EmailLogRepository emailLogRepository;
+    public EmailService(JavaMailSender javaMailSender, EmailTemplateRepository emailTemplateRepository, EmailLogRepository emailLogRepository) {
         this.javaMailSender = javaMailSender;
         this.emailTemplateRepository = emailTemplateRepository;
+        this.emailLogRepository = emailLogRepository;
     }
 
     /**
@@ -31,21 +41,116 @@ public class EmailService {
      * @param subject Tiêu đề email
      * @param body    Nội dung email (có thể chứa HTML)
      */
+
     public void sendHtmlEmail(String toEmail, String subject, String body) throws MessagingException {
-        // Tạo một đối tượng MimeMessage (dành cho email có định dạng phức tạp như HTML, đính kèm file)
-        MimeMessage message = javaMailSender.createMimeMessage();
-
-        // Dùng Helper để set các thông số dễ dàng hơn. True nghĩa là cho phép multipart
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail); // Người nhận
-        helper.setSubject(subject); // Tiêu đề
-        // Tham số thứ 2 là true để báo cho Spring biết đây là nội dung HTML
-        helper.setText(body, true);
-
-        // Thực hiện gửi
-        javaMailSender.send(message);
+        sendHtmlEmail(toEmail, subject, body, null);
     }
+
+    public void sendHtmlEmail(String toEmail, String subject, String body,Long templateId) throws MessagingException {
+        // 1. Tạo Log chuẩn bị lưu
+        EmailLog log = new EmailLog();
+        log.setToEmail(toEmail);
+        log.setSubject(subject);
+
+        // Cắt lấy một đoạn ngắn của nội dung để lưu vào bodySnippet (ví dụ 255 ký tự) tránh tràn DB
+        String snippet = body.replaceAll("<[^>]*>", ""); // Xóa bớt thẻ HTML cho dễ đọc
+        log.setBodySnippet(snippet.length() > 250 ? snippet.substring(0, 250) + "..." : snippet);
+
+        log.setSentAt(OffsetDateTime.now());
+        if (templateId != null) {
+            log.setTemplateId(templateId);
+        }
+        try {
+            // Tạo một đối tượng MimeMessage (dành cho email có định dạng phức tạp như HTML, đính kèm file)
+            MimeMessage message = javaMailSender.createMimeMessage();
+            //  True nghĩa là cho phép multipart
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(toEmail); // Người nhận
+            helper.setSubject(subject); // Tiêu đề
+            // Tham số thứ 2 là true để báo cho Spring biết đây là nội dung HTML
+            helper.setText(body, true);
+
+            // Thực hiện gửi
+            javaMailSender.send(message);
+
+            // Lưu trạng thái thành công
+            log.setStatus("sent");
+            emailLogRepository.save(log);
+        }catch (Exception e){
+            // Lưu trạng thái thất bại và nguyên nhân
+            log.setStatus("failed");
+            log.setErrorMessage(e.getMessage());
+            emailLogRepository.save(log);
+
+            throw new MessagingException("Lỗi gửi mail: " + e.getMessage());
+        }
+    }
+
+    public boolean sendEmailUsingTemplate(String toEmail, String templateCode, Map<String, String> variables) {
+        try {
+            // 1. Tìm template theo mã Code (VD: "OTP_REGISTER")
+            Optional<EmailTemplate> optTemplate = emailTemplateRepository.findByCode(templateCode);
+            if (optTemplate.isEmpty()) {
+                System.err.println("Lỗi: Không tìm thấy mẫu email có mã " + templateCode);
+                return false;
+            }
+
+            EmailTemplate template = optTemplate.get();
+            String subject = template.getSubject();
+            String body = template.getBodyHtml();
+
+            // 2. Vòng lặp thay thế TẤT CẢ các biến động có trong Map
+            // Ví dụ biến "[FULL_NAME]" -> "Nguyễn Văn A"
+            for (Map.Entry<String, String> entry : variables.entrySet()) {
+                String placeholder = "[" + entry.getKey() + "]";
+                String realValue = entry.getValue();
+
+                if (subject != null) {
+                    subject = subject.replace(placeholder, realValue);
+                }
+                if (body != null) {
+                    body = body.replace(placeholder, realValue);
+                }
+            }
+
+            // 3. Gửi đi
+            sendHtmlEmail(toEmail, subject, body,template.getId());
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("Lỗi khi gửi mail từ Template: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // --- HÀM MỚI BỔ SUNG ĐỂ SỬA LỖI TRÙNG LOG KHI RESEND ---
+    public void resendEmailLog(EmailLog existingLog) throws MessagingException {
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(existingLog.getToEmail());
+            helper.setSubject(existingLog.getSubject());
+            helper.setText(existingLog.getBodySnippet(), true);
+
+            javaMailSender.send(message);
+
+            existingLog.setStatus("sent");
+            existingLog.setErrorMessage(null);
+            existingLog.setSentAt(OffsetDateTime.now());
+            emailLogRepository.save(existingLog);
+
+        } catch (Exception e) {
+            existingLog.setStatus("failed");
+            existingLog.setErrorMessage("Gửi lại thất bại: " + e.getMessage());
+            existingLog.setSentAt(OffsetDateTime.now());
+            emailLogRepository.save(existingLog);
+            throw new MessagingException("Lỗi gửi mail: " + e.getMessage());
+        }
+    }
+
+
 
     /**
      * Hàm Test gửi mail sử dụng ID của Mẫu Email (Template).
@@ -70,8 +175,6 @@ public class EmailService {
             }
 
             // --- BƯỚC THAY THẾ BIẾN (REPLACE PLACEHOLDERS) ---
-            // Vì đây là gửi test, ta giả lập dữ liệu thay vào các biến [TEN_SV], [MA_SV],
-            // v.v.
             if (body != null) {
                 body = body.replace("[TEN_SV]", "Sinh Viên Test")
                         .replace("[MA_SV]", "DTU123456")
@@ -82,7 +185,7 @@ public class EmailService {
             }
 
             // Gọi hàm gửi mail thực tế ở trên
-            sendHtmlEmail(toEmail, subject, body);
+            sendHtmlEmail(toEmail, subject, body,template.getId());
 
             System.out.println("Đã gửi mail test thành công tới: " + toEmail);
             return true;

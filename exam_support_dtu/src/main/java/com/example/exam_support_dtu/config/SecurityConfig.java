@@ -8,7 +8,14 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @Configuration
+@org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 public class SecurityConfig {
+
+        private final CustomAuthenticationSuccessHandler successHandler;
+
+        public SecurityConfig(CustomAuthenticationSuccessHandler successHandler) {
+                this.successHandler = successHandler;
+        }
 
         // 1. Khai báo Bean PasswordEncoder để Spring Security dùng mã hóa/kiểm tra mật
         // khẩu
@@ -26,12 +33,18 @@ public class SecurityConfig {
                                 // Cấu hình phân quyền đường dẫn
                                 .authorizeHttpRequests(auth -> auth
                                                 // Các trang ai cũng vào được (kể cả chưa đăng nhập)
-                                                .requestMatchers("/", "/search", "/login", "/register" , "/search", "/login", "/register","/verify-otp" )
+                                                .requestMatchers("/", "/home", "/search", "/login", "/register",
+                                                                "/verify-otp", "/forgot-password", "/reset-password",
+                                                                "/css/**", "/js/**", "/images/**")
                                                 .permitAll()
 
                                                 // CHÍNH THỨC PHÂN QUYỀN: Chỉ tài khoản có Role là ADMIN mới vào được
                                                 // khu vực /admin/...
                                                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+
+                                                // CHÍNH THỨC PHÂN QUYỀN: Chỉ tài khoản có Role là STUDENT mới vào được
+                                                // khu vực user
+                                                .requestMatchers("/user/**", "/api/user/**").hasRole("STUDENT")
 
                                                 // Các trang còn lại: Chỉ cần Đăng nhập là vào được (bất kể là Admin hay
                                                 // Student)
@@ -43,8 +56,9 @@ public class SecurityConfig {
                                                 .loginProcessingUrl("/perform_login")
                                                 .usernameParameter("email")
                                                 .passwordParameter("password")
-                                                // Thay vì fix cứng 1 trang, ta dùng Handler để kiểm tra Role và điều hướng
-                                                .successHandler(new CustomAuthenticationSuccessHandler())
+                                                // Thay vì fix cứng 1 trang, ta dùng Handler để kiểm tra Role và điều
+                                                // hướng
+                                                .successHandler(successHandler)
                                                 .failureUrl("/login?error=true")
                                                 .permitAll())
 

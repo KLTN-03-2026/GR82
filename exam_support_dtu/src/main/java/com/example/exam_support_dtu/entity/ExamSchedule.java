@@ -60,4 +60,7 @@ public class ExamSchedule {
     @OneToMany(mappedBy = "examSchedule", cascade = CascadeType.ALL)
     private List<ExamRoom> rooms = new ArrayList<>();
 
+    @Transient
+    private Long interestedCount = 0L;
+
 }

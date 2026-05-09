@@ -8,4 +8,6 @@ public interface ExamRoomRepository extends JpaRepository<ExamRoom,Long> {
 
     @Transactional
     void deleteByExamScheduleId(Long examScheduleId);
+
+    java.util.List<ExamRoom> findAllByExamScheduleIdOrderByExamDateAsc(Long examScheduleId);
 }

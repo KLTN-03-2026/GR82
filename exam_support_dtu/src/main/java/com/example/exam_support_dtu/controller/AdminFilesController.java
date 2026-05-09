@@ -3,6 +3,9 @@ package com.example.exam_support_dtu.controller;
 import com.example.exam_support_dtu.entity.ExamRoom;
 import com.example.exam_support_dtu.entity.ExamSchedule;
 import com.example.exam_support_dtu.entity.Files;
+import com.example.exam_support_dtu.enums.FileStatus;
+import com.example.exam_support_dtu.repository.ExamInterestRepository;
+import com.example.exam_support_dtu.repository.ExamOriginalRepository;
 import com.example.exam_support_dtu.repository.ExamScheduleRepository;
 import com.example.exam_support_dtu.repository.FilesRepository;
 import org.springframework.core.io.FileSystemResource;
@@ -21,33 +24,78 @@ import org.springframework.web.bind.annotation.*;
 import java.io.File;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 public class AdminFilesController {
     private final FilesRepository filesRepository;
     private final ExamScheduleRepository examScheduleRepository;
+    private final ExamOriginalRepository examOriginalRepository;
+    private final ExamInterestRepository examInterestRepository;
 
-    public AdminFilesController(FilesRepository filesRepository, ExamScheduleRepository examScheduleRepository) {
+    public AdminFilesController(FilesRepository filesRepository, ExamScheduleRepository examScheduleRepository,
+            ExamOriginalRepository examOriginalRepository, ExamInterestRepository examInterestRepository) {
         this.filesRepository = filesRepository;
         this.examScheduleRepository = examScheduleRepository;
+        this.examOriginalRepository = examOriginalRepository;
+        this.examInterestRepository = examInterestRepository;
     }
-
 
     // =========================================================
     // 1. HIỂN THỊ GIAO DIỆN (THYMELEAF)
     // =========================================================
     @GetMapping("/admin/files")
     public String showFilesPage(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer minInterest,
+            @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "15") int size,
             Model model) {
 
-        // Sắp xếp file mới nhất lên đầu bảng
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
-        Page<Files> filePage = filesRepository.findAll(pageable);
+        // Sắp xếp tùy theo tham số sort (dùng tên cột SQL vì là native query)
+        Sort sortOrder;
+        if ("newest".equals(sort)) {
+            sortOrder = Sort.by("uploaded_at").descending();
+        } else if ("largest".equals(sort)) {
+            sortOrder = Sort.by("file_size").descending();
+        } else {
+            sortOrder = Sort.by("id").ascending();
+        }
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+        // 2. Lấy dữ liệu qua Filter (dùng query riêng nếu sort theo lượt quan tâm)
+        Page<Files> filePage;
+        if ("interest".equals(sort)) {
+            Pageable unsortedPageable = PageRequest.of(page, size);
+            filePage = filesRepository.searchAndFilterFilesByInterest(search, type, minInterest, unsortedPageable);
+        } else {
+            filePage = filesRepository.searchAndFilterFiles(search, type, minInterest, pageable);
+        }
+
+        // 5. Cập nhật 4 ô Stat-boxes (Giả sử bạn đã có các hàm này trong Repo)
+        long totalFiles = examOriginalRepository.count();
+        long downloadedFiles = examOriginalRepository.countByStatusIn(List.of("downloaded", "parsed"));
+        long parsedFiles = examOriginalRepository.countByStatus(FileStatus.parsed);
+        long newUpdatedFiles = examOriginalRepository.countByFoundAtAfter(LocalDateTime.now().minusDays(7));
+
+        double syncRate = 0;
+        if (totalFiles > 0) {
+            syncRate = (double) parsedFiles / totalFiles * 100;
+        }
+
+        model.addAttribute("syncRate", String.format("%.1f", syncRate));
+        model.addAttribute("filePage", filePage);
+        model.addAttribute("totalFiles", totalFiles);
+        model.addAttribute("downloadedFiles", downloadedFiles);
+        model.addAttribute("parsedFiles", parsedFiles);
+        model.addAttribute("newUpdatedFiles", newUpdatedFiles);
 
         model.addAttribute("filePage", filePage);
         return "admin-files";
@@ -93,7 +141,8 @@ public class AdminFilesController {
             fileName = "tai_lieu_so_" + id + "." + ext;
         }
 
-        // 2. MÃ HÓA TÊN FILE (Chống lỗi font tiếng Việt và dấu cách khi tải qua trình duyệt)
+        // 2. MÃ HÓA TÊN FILE (Chống lỗi font tiếng Việt và dấu cách khi tải qua trình
+        // duyệt)
         String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
 
         // 3. Trả về Header chuẩn RFC 5987 để ép tải xuống với tên file chính xác
@@ -151,10 +200,9 @@ public class AdminFilesController {
         }
 
         Resource resource = new FileSystemResource(physicalFile);
-
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
 
-        // ĐÃ FIX: Gọi .name() để chuyển Enum FileType thành String trước khi so sánh
+        // Gọi .name() để chuyển Enum FileType thành String trước khi so sánh
         if (dbFile.getExtension() != null && "pdf".equalsIgnoreCase(dbFile.getExtension().name())) {
             mediaType = MediaType.APPLICATION_PDF;
         }
@@ -199,8 +247,8 @@ public class AdminFilesController {
         Object responseData = new Object() {
             public final String courseCode = schedule.getCourseCode();
             public final String courseName = schedule.getCourseName();
-            public final Integer credit = schedule.getCredit();     // Thêm Tín chỉ
-            public final String semester = schedule.getSemester();  // Thêm Học kỳ
+            public final Integer credit = schedule.getCredit(); // Thêm Tín chỉ
+            public final String semester = schedule.getSemester(); // Thêm Học kỳ
             public final List<Object> rooms = roomList;
         };
 

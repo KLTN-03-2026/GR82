@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html th:replace="~{user-layout :: user_layout(~{::#home-content}, '/css/user/user-home.css?v=1.2', 'home')}"
+    xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div id="home-content">
+
+        <!-- Main Content Area -->
+        <div class="container">
+            <div class="main-layout">
+
+                <!-- Main -->
+                <main class="content-area">
+
+                    <!-- Search Section -->
+                    <section class="card search-section">
+                        <h1 class="section-title">Tra cứu lịch thi</h1>
+                        <p class="section-subtitle">
+                            Nhập mã sinh viên để tra cứu lịch thi mới nhất từ hệ thống DTU Supports.
+                        </p>
+
+                        <form th:action="@{/user/schedules}" method="get" class="search-form">
+                            <div class="form-group">
+                                <label class="label" for="studentCode">Mã sinh viên</label>
+                                <input id="studentCode" class="input-control" type="text" name="studentCode"
+                                    placeholder="Ví dụ: 28211..." th:value="${studentCode}" required autocomplete="off">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="label" for="semester">Học kỳ</label>
+                                <select id="semester" class="input-control" name="semester">
+                                    <option value="">Tất cả học kỳ</option>
+                                    <option value="Spring 2024" th:selected="${semester == 'Spring 2024'}">Spring 2024
+                                    </option>
+                                    <option value="Fall 2023" th:selected="${semester == 'Fall 2023'}">Fall 2023
+                                    </option>
+                                    <option value="Summer 2024" th:selected="${semester == 'Summer 2024'}">Summer 2024
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="label" for="courseFilter">Môn học</label>
+                                <input id="courseFilter" class="input-control" type="text" name="courseFilter"
+                                    placeholder="Nhập mã môn hoặc tên môn" th:value="${courseFilter}"
+                                    autocomplete="off">
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-primary" type="submit">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">search</span>
+                                    Tra cứu
+                                </button>
+
+                                <button class="btn btn-secondary" type="button">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">forum</span>
+                                    Hỏi AI
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!-- 2. DANH SÁCH LỊCH THI MỚI CẬP NHẬT (ICON HORIZONTAL ACCORDION) -->
+                    <section class="home-schedule-list">
+                        <div class="results-header" style="margin-bottom: 1rem;">
+                            <h2>Lịch thi mới cập nhật</h2>
+                            <span class="results-count">Hiển thị <strong th:text="${latestSchedules.size()}">0</strong>
+                                / <strong th:text="${totalItems}">0</strong> môn thi</span>
+                        </div>
+
+                        <div class="accordion-container">
+                            <div class="accordion-item card" th:each="eo : ${latestSchedules}">
+                                <th:block th:with="sch=${(eo.schedules != null and !eo.schedules.isEmpty()) ? eo.schedules[0] : null}">
+                                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                                        <div class="accordion-header-left">
+                                            <span class="course-badge"
+                                                th:text="${sch != null ? sch.courseCode : 'N/A'}">IS-ENG 101</span>
+                                            <div class="file-info-header">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <a th:if="${eo.savedFileId != null}"
+                                                        th:href="@{/api/files/download/{id}(id=${eo.savedFileId})}"
+                                                        target="_blank" title="Tải PDF">
+                                                        <span class="material-symbols-outlined"
+                                                            style="color: #ef4444; font-size: 1.25rem;">picture_as_pdf</span>
+                                                    </a>
+                                                    <span th:if="${eo.savedFileId == null}"
+                                                        class="material-symbols-outlined"
+                                                        style="color: #cbd5e1; font-size: 1.25rem;"
+                                                        title="Không có tệp">description</span>
+                                                    <span class="file-name-text"
+                                                        th:text="${eo.fileOriginalName}">Lich_thi_K28.xlsx</span>
+                                                </div>
+                                                <span class="meta-date"
+                                                    th:text="${sch != null ? sch.courseName : 'Dữ liệu đang được cập nhật...'}">English
+                                                    for IT</span>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-header-right">
+                                            <div class="mini-date-badge">
+                                                <span class="date-label">NGÀY THI</span>
+                                                <span class="date-day"
+                                                    th:text="${(sch != null and !sch.rooms.isEmpty()) ? #temporals.format(sch.rooms[0].examDate, 'dd') : '--'}">03</span>
+                                                <span class="date-month"
+                                                    th:text="${(sch != null and !sch.rooms.isEmpty()) ? 'Tháng ' + #temporals.format(sch.rooms[0].examDate, 'M') : '---'}">Tháng
+                                                    4</span>
+                                            </div>
+                                            <button th:if="${sch != null}" class="btn-icon-follow" type="button"
+                                                th:classappend="${followedScheduleIds.contains(sch.id)} ? 'active' : ''"
+                                                th:onclick="'event.stopPropagation(); toggleHomeInterest(' + ${sch.id} + ', this, false)'">
+                                                <span class="material-symbols-outlined"
+                                                    th:text="${followedScheduleIds.contains(sch.id)} ? 'bookmark_check' : 'bookmark'">bookmark</span>
+                                            </button>
+                                            <button th:if="${sch == null}" class="btn-icon-follow" type="button"
+                                                th:classappend="${followedOriginalIds.contains(eo.id)} ? 'active' : ''"
+                                                th:onclick="'event.stopPropagation(); toggleHomeInterest(' + ${eo.id} + ', this, true)'">
+                                                <span class="material-symbols-outlined"
+                                                    th:text="${followedOriginalIds.contains(eo.id)} ? 'bookmark_check' : 'bookmark'">bookmark</span>
+                                            </button>
+                                            <span class="material-symbols-outlined arrow-icon">arrow_drop_down</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="accordion-body compact-accordion-body">
+                                        <div class="accordion-content-inner">
+                                            <div class="horizontal-info-row distributed">
+                                                <div class="info-column">
+                                                    <span class="label">Lần thi</span>
+                                                    <div class="value-with-icon">
+                                                        <span class="material-symbols-outlined">cached</span>
+                                                        <span class="value"
+                                                            th:text="${sch != null ? sch.attempt : '--'}">1</span>
+                                                    </div>
+                                                </div>
+                                                <div class="info-column">
+                                                    <span class="label">Sinh viên</span>
+                                                    <div class="value-with-icon">
+                                                        <span class="material-symbols-outlined">groups</span>
+                                                        <span class="value"
+                                                            th:text="${sch != null ? sch.totalStudents : '--'}">45</span>
+                                                    </div>
+                                                </div>
+                                                <div class="info-column">
+                                                    <span class="label">Giờ thi</span>
+                                                    <div class="value-with-icon">
+                                                        <span class="material-symbols-outlined">schedule</span>
+                                                        <span class="value"
+                                                            th:text="${(sch != null and !sch.rooms.isEmpty()) ? sch.rooms[0].examTime : '--h--'}">13h30</span>
+                                                    </div>
+                                                </div>
+                                                <div class="info-column">
+                                                    <span class="label">Mã môn</span>
+                                                    <div class="value-with-icon">
+                                                        <span class="material-symbols-outlined">qr_code</span>
+                                                        <span class="value"
+                                                            th:text="${sch != null ? sch.courseCode : '--'}">IS-ENG
+                                                            101</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="compact-footer">
+                                                <div class="accordion-footer-note pink-note">
+                                                    <span class="material-symbols-outlined">info</span>
+                                                    <span
+                                                        th:text="${sch != null ? 'Hãy nhập mã sinh viên của bạn để xem chính xác phòng thi và SBD.' : 'Tệp tin này hiện chưa có dữ liệu lịch thi chi tiết.'}">
+                                                        Hãy nhập mã sinh viên của bạn để xem chính xác phòng thi và SBD.
+                                                    </span>
+                                                </div>
+                                                <a th:if="${sch != null}"
+                                                    th:href="@{/user/schedules(scheduleId=${sch.id})}"
+                                                    class="btn-view-detail-action">
+                                                    Xem chi tiết <span
+                                                        class="material-symbols-outlined">chevron_right</span>
+                                                </a>
+                                                <button th:if="${sch == null}" type="button" class="btn-view-detail-action"
+                                                    th:data-id="${eo.savedFileId ?: 0}"
+                                                    th:data-name="${eo.fileOriginalName ?: 'Tài liệu'}"
+                                                    onclick="openPdfPreviewFromBtn(this)">
+                                                    Xem chi tiết <span class="material-symbols-outlined">visibility</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </th:block>
+                            </div>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination-container" th:if="${totalPages > 1}">
+                            <div class="pagination">
+                                <a th:href="@{/user/home(page=${currentPage - 1})}" class="page-link prev"
+                                    th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </a>
+
+                                <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                                    <a th:href="@{/user/home(page=${i})}" class="page-link"
+                                        th:classappend="${i == currentPage} ? 'active' : ''" th:text="${i + 1}">1</a>
+                                </th:block>
+
+                                <a th:href="@{/user/home(page=${currentPage + 1})}" class="page-link next"
+                                    th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Intro Section -->
+                    <section class="results-container">
+                        <div class="results-header">
+                            <h2>Hướng dẫn sử dụng</h2>
+                            <span class="results-count">3 bước đơn giản</span>
+                        </div>
+
+                        <div class="card exam-card">
+                            <div class="exam-header">
+                                <div style="display: flex; align-items: center;">
+                                    <span class="course-tag">STEP 1</span>
+                                    <h3 class="course-title">Nhập mã sinh viên</h3>
+                                </div>
+                                <span class="credit-badge">Bắt buộc</span>
+                            </div>
+
+                            <div class="exam-body">
+                                <div class="info-block">
+                                    <span class="info-label">Bước 1</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">badge</span>
+                                        Nhập mã sinh viên
+                                    </div>
+                                    <span class="info-subtext">Ví dụ: 28211...</span>
+                                </div>
+
+                                <div class="info-block">
+                                    <span class="info-label">Bước 2</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">manage_search</span>
+                                        Bấm tra cứu
+                                    </div>
+                                    <span class="info-subtext">Hệ thống tìm trong dữ liệu lịch thi</span>
+                                </div>
+
+                                <div class="info-block">
+                                    <span class="info-label">Bước 3</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">event_available</span>
+                                        Xem lịch thi
+                                    </div>
+                                    <span class="info-subtext">Ngày thi, giờ thi, phòng thi</span>
+                                </div>
+
+                                <div class="info-block">
+                                    <span class="info-label">Nhắc nhở</span>
+                                    <div class="info-value">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 16px; color: var(--text-muted);">notifications</span>
+                                        Theo dõi lịch thi
+                                    </div>
+                                    <span class="info-subtext">Hạn chế quên hoặc nhầm lịch</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+
+                <!-- Sidebar -->
+                <aside class="sidebar-area">
+
+                <!-- Sidebar -->
+                <aside class="sidebar-area">
+
+                    <!-- My Documents -->
+                    <section class="card sidebar-card">
+                        <div class="sidebar-card-header">
+                            <span class="material-symbols-outlined">folder_shared</span>
+                            <h3>Tài liệu của tôi</h3>
+                            <span class="badge-count" th:text="${mySidebarDocs != null ? mySidebarDocs.size() : 0}">0</span>
+                        </div>
+
+                        <div class="followed-list">
+                            <!-- List of Docs -->
+                            <div th:each="doc : ${mySidebarDocs}" class="followed-item doc-item">
+                                <div class="item-top">
+                                    <span class="item-code" th:text="${doc.fileType}">PDF</span>
+                                    <span class="item-status" 
+                                          th:classappend="${doc.status == 'APPROVED' ? 'status-ready' : 'status-pending'}"
+                                          th:text="${doc.status == 'APPROVED' ? 'ĐÃ DUYỆT' : 'CHỜ DUYỆT'}">READY</span>
+                                </div>
+                                <div class="item-name" th:text="${doc.title}">Tên tài liệu</div>
+                                <div class="item-time">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span>
+                                    <span th:text="${#temporals.format(doc.createdAt, 'dd/MM/yyyy')}">01/01/2024</span>
+                                </div>
+                                <a th:href="@{/api/user/my-documents/view/{id}(id=${doc.id})}" target="_blank" class="sidebar-item-link"></a>
+                            </div>
+
+                            <!-- Empty state for docs -->
+                            <div th:if="${mySidebarDocs == null or mySidebarDocs.isEmpty()}" class="followed-item">
+                                <div class="item-top">
+                                    <span class="item-code">DOCS</span>
+                                    <span class="item-status">INFO</span>
+                                </div>
+                                <div class="item-name">Chưa có tài liệu tải lên</div>
+                                <div class="item-time">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">upload_file</span>
+                                    Tải lên tài liệu ôn tập của bạn
+                                </div>
+                            </div>
+                        </div>
+                        <a th:href="@{/user/my-documents}" class="sidebar-footer-link" th:if="${not #lists.isEmpty(mySidebarDocs)}">
+                            Xem tất cả <span class="material-symbols-outlined">chevron_right</span>
+                        </a>
+                    </section>
+
+                    <!-- Followed Exams -->
+                    <section class="card sidebar-card">
+                        <div class="sidebar-card-header">
+                            <span class="material-symbols-outlined">bookmark</span>
+                            <h3>Lịch đã theo dõi</h3>
+                            <span class="badge-count" th:text="${sidebarInterests != null ? sidebarInterests.size() : 0}">0</span>
+                        </div>
+
+                        <div class="followed-list">
+                            <!-- List of Interests -->
+                            <div th:each="interest : ${sidebarInterests}" class="followed-item">
+                                <div class="item-top">
+                                    <span class="item-code" th:text="${interest.examSchedule != null ? interest.examSchedule.courseCode : 'PDF'}">DTU</span>
+                                    <span class="item-status status-ready">THEO DÕI</span>
+                                </div>
+                                <div class="item-name" th:text="${interest.examSchedule != null ? interest.examSchedule.courseName : interest.examOriginal.fileOriginalName}">Chưa có lịch thi được theo dõi</div>
+                                <div class="item-time" th:if="${interest.examSchedule != null and !interest.examSchedule.rooms.isEmpty()}">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">schedule</span>
+                                    <span th:text="${#temporals.format(interest.examSchedule.rooms[0].examDate, 'dd/MM')} + ' - ' + ${interest.examSchedule.rooms[0].examTime}">Tra cứu lịch thi để bắt đầu theo dõi</span>
+                                </div>
+                                <div class="item-time" th:if="${interest.examSchedule == null}">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">description</span>
+                                    Dạng tệp PDF
+                                </div>
+                                <a th:href="@{/user/my-exams}" class="sidebar-item-link"></a>
+                            </div>
+
+                            <!-- Empty state for interests -->
+                            <div th:if="${sidebarInterests == null or sidebarInterests.isEmpty()}" class="followed-item">
+                                <div class="item-top">
+                                    <span class="item-code">DTU</span>
+                                    <span class="item-status">READY</span>
+                                </div>
+                                <div class="item-name">Chưa có lịch thi được theo dõi</div>
+                                <div class="item-time">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">info</span>
+                                    Tra cứu lịch thi để bắt đầu theo dõi
+                                </div>
+                            </div>
+                        </div>
+                        <a th:href="@{/user/my-exams}" class="sidebar-footer-link" th:if="${not #lists.isEmpty(sidebarInterests)}">
+                            Quản lý lịch thi <span class="material-symbols-outlined">chevron_right</span>
+                        </a>
+                    </section>
+
+
+                </aside>
+            </div>
+        </div>
+
+        <!-- PDF Preview Modal -->
+        <div th:replace="~{fragments/exam-modals :: pdf_preview_modal}"></div>
+
+        <script>
+            function toggleAccordion(header) {
+                const item = header.parentElement;
+                const container = item.parentElement;
+
+                const allItems = container.querySelectorAll('.accordion-item');
+                allItems.forEach(i => {
+                    if (i !== item && i.classList.contains('active')) {
+                        i.classList.remove('active');
+                    }
+                });
+
+                item.classList.toggle('active');
+            }
+
+            function toggleHomeInterest(id, btn, isOriginal = false) {
+                const icon = btn.querySelector('.material-symbols-outlined');
+                const isFollowing = btn.classList.contains('active');
+
+                if (isFollowing) {
+                    alert("Để hủy quan tâm, vui lòng truy cập trang 'Lịch thi của tôi'");
+                    return;
+                }
+
+                let url = `/api/user/schedules/${id}/follow`;
+                if (isOriginal) {
+                    url += `?isOriginal=true`;
+                }
+
+                fetch(url, { method: 'POST' })
+                    .then(res => {
+                        if (res.status === 401) {
+                            alert("Vui lòng đăng nhập để thực hiện chức năng này!");
+                            window.location.href = "/login";
+                            return;
+                        }
+                        if (!res.ok) throw new Error("Thất bại");
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'already_in_my_exams') {
+                            alert(data.message);
+                            return;
+                        }
+
+                        btn.classList.add('active');
+                        if (icon) icon.innerText = 'bookmark_check';
+
+                        if (data.status === 'upgraded') {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }
+        </script>
+
+    </div>
+</body>
+
+</html>

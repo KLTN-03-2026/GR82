@@ -117,42 +117,135 @@
                 <h4>Hoạt động gần đây</h4>
                 <span class="activity-badge">Mới</span>
             </div>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-icon icon-success"><i class="fa-solid fa-check"></i></div>
-                    <div class="timeline-content">
-                        <h5>Đã cào thành công</h5>
-                        <p>Lịch thi Khoa CNTT - 1,200 records</p>
-                        <span class="time">10 PHÚT TRƯỚC</span>
+            <div class="timeline-wrapper">
+                <div class="timeline">
+                    <!-- Vòng lặp lấy từng sự kiện trong DB -->
+                    <div class="timeline-item" th:each="log : ${recentLogs}">
+
+                        <!-- Đổi class CSS Icon dựa trên trạng thái (logLevel) -->
+                        <div class="timeline-icon" th:classappend="${
+                    log.logLevel == 'SUCCESS' ? 'icon-success' :
+                    (log.logLevel == 'WARNING' ? 'icon-warning' :
+                    (log.logLevel == 'ERROR' ? 'icon-danger' : 'icon-info'))}">
+
+                            <!-- Đổi hình dạng Icon -->
+                            <i th:switch="${log.logLevel}">
+                                <i th:case="'SUCCESS'" class="fa-solid fa-check"></i>
+                                <i th:case="'WARNING'" class="fa-solid fa-triangle-exclamation"></i>
+                                <i th:case="'ERROR'" class="fa-solid fa-xmark"></i>
+                                <i th:case="'INFO'" class="fa-solid fa-gear"></i>
+                            </i>
+                        </div>
+
+                        <!-- In nội dung -->
+                        <div class="timeline-content">
+                            <h5 th:text="${log.action}">Tiêu đề hành động</h5>
+                            <p th:text="${log.details}">Chi tiết hành động</p>
+                            <!-- Gọi hàm getTimeAgo() trong Entity -->
+                            <span class="time" th:text="${log.timeAgo}">10 PHÚT TRƯỚC</span>
+                        </div>
                     </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-icon icon-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div class="timeline-content">
-                        <h5>Máy chủ phản hồi chậm</h5>
-                        <p>Nguồn: pdaotao.duytan.edu.vn (Timeout 5s)</p>
-                        <span class="time">45 PHÚT TRƯỚC</span>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-icon icon-info"><i class="fa-solid fa-gear"></i></div>
-                    <div class="timeline-content">
-                        <h5>Cập nhật cấu hình</h5>
-                        <p>Admin đã thay đổi CronJob scheduler</p>
-                        <span class="time">2 GIỜ TRƯỚC</span>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-icon icon-danger"><i class="fa-solid fa-xmark"></i></div>
-                    <div class="timeline-content">
-                        <h5>Thất bại đồng bộ Mail</h5>
-                        <p>Lỗi kết nối SMTP server (Port 587)</p>
-                        <span class="time">HÔM QUA</span>
+
+                    <!-- Hiển thị nếu chưa có log nào -->
+                    <div th:if="${#lists.isEmpty(recentLogs)}" style="text-align: center; color: #94a3b8; font-size: 13px; margin: 20px 0;">
+                        Chưa có hoạt động nào được ghi nhận.
                     </div>
                 </div>
             </div>
-            <button class="btn-outline">Xem lịch sử chi tiết</button>
+            <button class="btn-outline" id="btnViewFullLogs">Xem lịch sử chi tiết</button>
         </div>
+
+    </div>
+
+    <!-- MODAL XEM CHI TIẾT LOG -->
+    <div class="modal-overlay" id="logsModalOverlay" style="display: none;">
+        <div class="modal-box" style="width: 900px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-clock-rotate-left text-red"></i> Nhật Ký Hoạt Động Hệ Thống</h3>
+                <button class="btn-icon" id="closeLogsModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="20%">Thời gian</th>
+                            <th width="20%">Hành động</th>
+                            <th width="45%">Chi tiết</th>
+                            <th width="15%">Kết quả</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <!-- Dữ liệu sẽ load qua JS -->
+                    </tbody>
+                </table>
+                <div id="logsPagination" class="pagination" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnViewFullLogs = document.getElementById('btnViewFullLogs');
+            const modal = document.getElementById('logsModalOverlay');
+            const btnClose = document.getElementById('closeLogsModal');
+            const tableBody = document.getElementById('logsTableBody');
+            const pagination = document.getElementById('logsPagination');
+
+            if (btnViewFullLogs) {
+                btnViewFullLogs.addEventListener('click', () => loadLogs(0));
+            }
+            if (btnClose) {
+                btnClose.addEventListener('click', () => modal.style.display = 'none');
+            }
+
+            function loadLogs(page) {
+                modal.style.display = 'flex';
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Đang tải dữ liệu...</td></tr>';
+                
+                fetch(`/api/admin/logs?page=${page}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        renderLogs(data.content);
+                        renderPagination(data);
+                    })
+                    .catch(err => {
+                        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red; padding:20px;">Lỗi tải dữ liệu!</td></tr>';
+                    });
+            }
+
+            function renderLogs(logs) {
+                if (logs.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Không có dữ liệu.</td></tr>';
+                    return;
+                }
+                tableBody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td style="font-size: 12px; color: #64748b;">${new Date(log.createdAt).toLocaleString('vi-VN')}</td>
+                        <td><span class="fw-600">${log.action}</span></td>
+                        <td style="font-size: 13px;">${log.details || ''}</td>
+                        <td>
+                            <span class="badge ${log.logLevel === 'SUCCESS' ? 'badge-success' : (log.logLevel === 'ERROR' ? 'badge-danger' : 'badge-warning')}">
+                                ${log.logLevel}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            function renderPagination(data) {
+                pagination.innerHTML = `
+                    <span class="page-info">Trang ${data.number + 1} / ${data.totalPages}</span>
+                    <div class="page-controls">
+                        <button class="page-btn ${data.first ? 'disabled' : ''}" onclick="loadLogs(${data.number - 1})"><i class="fa-solid fa-angle-left"></i></button>
+                        <button class="page-btn ${data.last ? 'disabled' : ''}" onclick="loadLogs(${data.number + 1})"><i class="fa-solid fa-angle-right"></i></button>
+                    </div>
+                `;
+            }
+            
+            // Gán loadLogs vào window để gọi từ thuộc tính onclick
+            window.loadLogs = loadLogs;
+        });
+    </script>
 
     </div>
 </div> </body>

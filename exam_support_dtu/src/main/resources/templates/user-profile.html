@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html th:replace="~{user-layout :: user_layout(~{::#profile-content}, '/css/admin-profile.css', 'profile')}"
+      xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="profile-content">
+
+    <div class="profile-header">
+        <div class="header-titles">
+            <h2>Hồ sơ cá nhân</h2>
+            <p>Quản lý thông tin tài khoản và cài đặt cá nhân của bạn</p>
+        </div>
+    </div>
+
+    <div class="profile-layout">
+        <!-- Cột trái: Avatar & Status -->
+        <div class="profile-card">
+            <div class="avatar-section">
+                <div class="avatar-large">
+                    <img th:if="${user.avatarUrl != null and !user.avatarUrl.isEmpty()}"
+                         th:src="${user.avatarUrl}" alt="Avatar">
+                    <i th:unless="${user.avatarUrl != null and !user.avatarUrl.isEmpty()}"
+                       class="fa-solid fa-user"></i>
+                    <button class="btn-change-avatar" title="Đổi ảnh đại diện">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                </div>
+                <h3 class="user-display-name"
+                    th:text="${user.fullName != null ? user.fullName : 'Chưa cập nhật'}">Nguyễn Văn A</h3>
+                <div class="role-badges">
+                    <span class="badge badge-success" th:if="${user.role == 'admin'}">Quản trị viên</span>
+                    <span class="badge badge-info" th:if="${user.role == 'student'}">Sinh viên</span>
+                </div>
+                <p class="user-email" th:text="${user.email}">email@dtu.edu.vn</p>
+            </div>
+
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-icon bg-gray-light text-gray"><i class="fa-regular fa-clock"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Lần đăng nhập cuối</span>
+                        <strong class="stat-value"
+                                th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm') : 'Chưa xác định'}">20/10/2026</strong>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon bg-gray-light text-gray"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Ngày tạo tài khoản</span>
+                        <strong class="stat-value"
+                                th:text="${user.createdAt != null ? #temporals.format(user.createdAt, 'dd/MM/yyyy') : 'Chưa xác định'}">15/08/2026</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Form thông tin -->
+        <div class="profile-details">
+            <div class="details-header">
+                <h3>Thông tin cơ bản</h3>
+                <button class="btn-outline-primary" id="btnEditProfile">
+                    <i class="fa-solid fa-pen"></i> Chỉnh sửa
+                </button>
+            </div>
+
+            <form class="profile-form" id="profileForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Họ và tên</label>
+                        <div class="input-with-icon">
+                            <i class="fa-regular fa-id-card"></i>
+                            <input type="text" id="profileFullName" class="form-control"
+                                   th:value="${user.fullName}" disabled placeholder="Ví dụ: Nguyễn Văn A">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email liên hệ</label>
+                        <div class="input-with-icon">
+                            <i class="fa-regular fa-envelope"></i>
+                            <input type="email" class="form-control locked" th:value="${user.email}"
+                                   disabled readonly title="Không thể đổi Email">
+                            <i class="fa-solid fa-lock lock-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mã sinh viên (MSSV)</label>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-hashtag"></i>
+                            <input type="text" id="profileMSSV" class="form-control"
+                                   th:value="${user.studentCode}" disabled placeholder="Nhập MSSV">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-phone"></i>
+                            <input type="text" id="profilePhone" class="form-control"
+                                   th:value="${user.phoneNumber}" disabled placeholder="Nhập số điện thoại">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Khoa / Viện</label>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-building-columns"></i>
+                            <input type="text" id="profileFaculty" class="form-control"
+                                   th:value="${user.faculty}" disabled placeholder="Ví dụ: Khoa Công nghệ Thông tin">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Lớp sinh hoạt</label>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-users-rectangle"></i>
+                            <input type="text" id="profileClass" class="form-control"
+                                   th:value="${user.class_name}" disabled placeholder="Ví dụ: K28TPM28">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions" id="editActions">
+                    <button type="button" class="btn-outline-gray" id="btnCancelEdit">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary" id="btnSaveProfile">
+                        <i class="fa-solid fa-floppy-disk" style="margin-right: 6px;"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+
+            <!-- Bảo mật -->
+            <div class="security-section">
+                <div class="details-header security-header">
+                    <h3>Bảo mật tài khoản</h3>
+                </div>
+                <div class="security-box" style="flex-direction: column; align-items: stretch;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="security-info">
+                            <div class="icon-box bg-red-light text-red"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div class="security-text">
+                                <h4>Mật khẩu đăng nhập</h4>
+                                <p>Thay đổi mật khẩu thường xuyên để bảo vệ tài khoản của bạn</p>
+                            </div>
+                        </div>
+                        <button class="btn-outline-gray" id="btnTogglePasswordForm">Đổi mật khẩu</button>
+                    </div>
+
+                    <form id="changePasswordForm"
+                          style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">Mật khẩu hiện tại</label>
+                            <input type="password" id="oldPassword" class="form-control"
+                                   placeholder="Nhập mật khẩu cũ..." required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">Mật khẩu mới</label>
+                            <input type="password" id="newPassword" class="form-control"
+                                   placeholder="Tối thiểu 6 ký tự..." required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">Xác nhận mật khẩu mới</label>
+                            <input type="password" id="confirmPassword" class="form-control"
+                                   placeholder="Nhập lại mật khẩu mới..." required>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                            <button type="button" class="btn-outline-gray" id="btnCancelPassword">Hủy</button>
+                            <button type="submit" class="btn-primary" id="btnSubmitPassword">
+                                <i class="fa-solid fa-key" style="margin-right: 6px;"></i> Xác nhận đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="avatarFileInput" accept=".jpg,.jpeg,.png,.webp" style="display: none;">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnEdit = document.getElementById('btnEditProfile');
+            const btnCancel = document.getElementById('btnCancelEdit');
+            const formControls = document.querySelectorAll('#profileForm .form-control:not(.locked)');
+            const editActions = document.getElementById('editActions');
+            const profileForm = document.getElementById('profileForm');
+
+            if (btnEdit) {
+                btnEdit.addEventListener('click', () => {
+                    formControls.forEach(input => input.removeAttribute('disabled'));
+                    editActions.classList.add('active');
+                    btnEdit.style.display = 'none';
+                });
+            }
+            if (btnCancel) {
+                btnCancel.addEventListener('click', () => {
+                    formControls.forEach(input => input.setAttribute('disabled', 'true'));
+                    editActions.classList.remove('active');
+                    btnEdit.style.display = 'inline-flex';
+                });
+            }
+
+            if (profileForm) {
+                profileForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const btnSave = document.getElementById('btnSaveProfile');
+                    const originalHtml = btnSave.innerHTML;
+                    btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+                    btnSave.disabled = true;
+                    const payload = {
+                        fullName: document.getElementById('profileFullName').value.trim(),
+                        studentCode: document.getElementById('profileMSSV').value.trim(),
+                        phoneNumber: document.getElementById('profilePhone').value.trim(),
+                        faculty: document.getElementById('profileFaculty').value.trim(),
+                        className: document.getElementById('profileClass').value.trim()
+                    };
+                    fetch('/api/profile/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(res => { if (!res.ok) throw new Error("Cập nhật thất bại!"); return res.json(); })
+                    .then(data => { alert(data.message); window.location.reload(); })
+                    .catch(err => { alert(err.message); btnSave.innerHTML = originalHtml; btnSave.disabled = false; });
+                });
+            }
+
+            const avatarBtn = document.querySelector('.btn-change-avatar');
+            const avatarInput = document.getElementById('avatarFileInput');
+            const avatarImg = document.querySelector('.avatar-large img');
+            if (avatarBtn && avatarInput) {
+                avatarBtn.addEventListener('click', () => avatarInput.click());
+                avatarInput.addEventListener('change', function () {
+                    const file = this.files[0];
+                    if (!file) return;
+                    if (file.size > 4 * 1024 * 1024) { alert('Dung lượng ảnh tối đa 4MB.'); this.value = ''; return; }
+                    if (avatarImg) avatarImg.style.opacity = '0.5';
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    fetch('/api/profile/avatar', { method: 'POST', body: formData })
+                    .then(res => { if (!res.ok) throw new Error("Lỗi tải ảnh lên!"); return res.json(); })
+                    .then(data => {
+                        const newUrl = data.avatarUrl + '?t=' + Date.now();
+                        if (avatarImg) { avatarImg.src = newUrl; avatarImg.style.opacity = '1'; }
+                        else { window.location.reload(); }
+                    })
+                    .catch(err => { alert(err.message); if (avatarImg) avatarImg.style.opacity = '1'; })
+                    .finally(() => { this.value = ''; });
+                });
+            }
+
+            const btnToggle = document.getElementById('btnTogglePasswordForm');
+            const pwForm = document.getElementById('changePasswordForm');
+            const btnCancelPw = document.getElementById('btnCancelPassword');
+            if (btnToggle && pwForm) {
+                btnToggle.addEventListener('click', () => { pwForm.style.display = 'block'; btnToggle.style.display = 'none'; });
+                btnCancelPw.addEventListener('click', () => { pwForm.reset(); pwForm.style.display = 'none'; btnToggle.style.display = 'inline-block'; });
+                pwForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const oldPassword = document.getElementById('oldPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    if (newPassword !== confirmPassword) { alert('Mật khẩu mới và xác nhận không khớp!'); return; }
+                    const btn = document.getElementById('btnSubmitPassword');
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+                    btn.disabled = true;
+                    fetch('/api/profile/change-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ oldPassword, newPassword })
+                    })
+                    .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                    .then(result => {
+                        if (result.status >= 400) throw new Error(result.body.message || "Lỗi hệ thống!");
+                        alert(result.body.message);
+                        pwForm.reset(); pwForm.style.display = 'none'; btnToggle.style.display = 'inline-block';
+                    })
+                    .catch(err => alert(err.message))
+                    .finally(() => { btn.innerHTML = orig; btn.disabled = false; });
+                });
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

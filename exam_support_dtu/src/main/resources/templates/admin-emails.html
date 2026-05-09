@@ -57,6 +57,9 @@
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" placeholder="Tìm kiếm email, tiêu đề...">
                 </div>
+                <button class="btn-outline text-red" id="btnCreateTestFail" style="border-color: #fca5a5; background: #fef2f2;">
+                    <i class="fa-solid fa-bug"></i> Tạo Log Lỗi
+                </button>
                 <button class="btn-outline" id="btnOpenTestMail"><i class="fa-solid fa-flask"></i> Test Gửi
                     Mail</button>
                 <button class="btn-primary"><i class="fa-solid fa-plus"></i> Tạo Mẫu Mới</button>
@@ -78,31 +81,105 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td class="fw-bold text-gray">#1245</td>
+                            <!-- Duyệt qua từng email trong danh sách emailPage -->
+                            <tr th:each="email : ${emailPage.content}">
+                                <td class="fw-bold text-gray" th:text="'#' + ${email.id}">#1245</td>
+
                                 <td>
                                     <div class="user-info-cell">
                                         <div class="user-name-stack">
-                                            <span class="user-main-name">Nguyễn Văn A</span>
-                                            <span class="user-email">nguyenvan@dtu.edu.vn</span>
+                                            <!-- Tên ảo: Cắt phần trước chữ @ của email để làm tên hiển thị -->
+                                            <span class="user-main-name" th:text="${#strings.substringBefore(email.toEmail, '@')}">Nguyễn Văn A</span>
+                                            <!-- Địa chỉ Email nhận: gọi chuẩn trường toEmail -->
+                                            <span class="user-email" th:text="${email.toEmail}">nguyenvan@dtu.edu.vn</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="fw-600 text-dark">[Nhắc nhở] Lịch thi môn Web</td>
-                                <td class="text-sm text-gray">10:30, 24/05/2026</td>
-                                <td><span class="status-badge badge-active"><span class="status-dot dot-green"></span>
-                                        Sent</span></td>
-                                <td class="text-center"><button class="btn-icon btn-detail" title="Chi tiết"><i
-                                            class="fa-regular fa-eye"></i></button></td>
+
+                                <!-- Tiêu đề Email -->
+                                <td class="fw-600 text-dark" th:text="${email.subject}">[Nhắc nhở] Lịch thi môn Web</td>
+
+                                <!-- Thời gian gửi (Có check null để tránh lỗi nếu email dạng pending chưa gửi) -->
+                                <td class="text-sm text-gray" th:text="${email.sentAt != null ? #temporals.format(email.sentAt, 'HH:mm, dd/MM/yyyy') : 'Chưa có'}">10:30, 24/05/2026</td>
+
+                                <!-- Trạng thái Email (Dùng equalsIgnoreCase để không phân biệt chữ hoa/thường) -->
+                                <td>
+                                    <span th:if="${#strings.equalsIgnoreCase(email.status, 'sent')}" class="status-badge badge-active">
+                                        <span class="status-dot dot-green"></span> Đã gửi
+                                    </span>
+                                    <span th:if="${#strings.equalsIgnoreCase(email.status, 'pending')}" class="status-badge" style="background: #fff7ed; color: #c2410c;">
+                                        <span class="status-dot" style="background: #f97316;"></span> Chờ gửi
+                                    </span>
+                                                    <span th:if="${#strings.equalsIgnoreCase(email.status, 'failed')}" class="status-badge" style="background: #fef2f2; color: #b91c1c;">
+                                        <span class="status-dot dot-red"></span> Thất bại
+                                    </span>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="action-buttons" style="display: flex; justify-content: center; gap: 8px;">
+                                        <!-- Nút Xem chi tiết (Luôn hiện) -->
+                                        <button class="btn-icon text-blue btn-detail-email" title="Xem chi tiết Log" th:attr="data-id=${email.id}">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+
+                                        <!-- Nút Sửa & Gửi Lại (Chỉ hiện khi FAILED hoặc PENDING) -->
+                                        <button th:if="${#strings.equalsIgnoreCase(email.status, 'failed') or #strings.equalsIgnoreCase(email.status, 'pending')}"
+                                                class="btn-icon text-purple btn-edit-resend"
+                                                title="Sửa nội dung & Gửi lại"
+                                                th:attr="data-id=${email.id}">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+
+                                        <!-- Nút Gửi lại (Chỉ hiện khi FAILED hoặc PENDING) -->
+                                        <button th:if="${#strings.equalsIgnoreCase(email.status, 'failed') or #strings.equalsIgnoreCase(email.status, 'pending')}"
+                                                class="btn-icon text-orange btn-resend-email"
+                                                title="Thử gửi lại email này"
+                                                th:attr="data-id=${email.id}">
+                                            <i class="fa-solid fa-rotate-right"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Hiển thị khi danh sách rỗng -->
+                            <tr th:if="${#lists.isEmpty(emailPage.content)}">
+                                <td colspan="6" style="text-align: center; padding: 40px 20px; color: #94a3b8;">
+                                    Hệ thống chưa ghi nhận lịch sử gửi email nào.
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="pagination">
-                    <span class="page-info">Hiển thị 1 - 1 của 1 email</span>
+                <!-- ========================================== -->
+                <!-- PHÂN TRANG (PAGINATION) -->
+                <!-- ========================================== -->
+                <div class="pagination" th:if="${emailPage.totalPages > 0}">
+        <span class="page-info"
+              th:text="'Hiển thị trang ' + (${emailPage.number + 1}) + ' / ' + ${emailPage.totalPages} + ' (Tổng ' + ${emailPage.totalElements} + ' email)'">
+            Hiển thị trang 1 / 10
+        </span>
+
                     <div class="page-controls">
-                        <button class="page-btn active">1</button>
+                        <!-- Nút Lùi (Previous) -->
+                        <a th:href="@{/admin/emails(page=${emailPage.number - 1})}" class="page-btn"
+                           th:classappend="${emailPage.first} ? 'disabled' : ''">
+                            <i class="fa-solid fa-angles-left"></i>
+                        </a>
+
+                        <!-- Các nút số trang (Chỉ hiển thị +-2 trang xung quanh trang hiện tại cho gọn) -->
+                        <th:block th:each="i : ${#numbers.sequence(0, emailPage.totalPages - 1)}">
+                            <a th:if="${i >= emailPage.number - 2 and i <= emailPage.number + 2}"
+                               th:href="@{/admin/emails(page=${i})}" class="page-btn"
+                               th:classappend="${emailPage.number == i} ? 'active' : ''" th:text="${i + 1}">1
+                            </a>
+                        </th:block>
+
+                        <!-- Nút Tiến (Next) -->
+                        <a th:href="@{/admin/emails(page=${emailPage.number + 1})}" class="page-btn"
+                           th:classappend="${emailPage.last} ? 'disabled' : ''">
+                            <i class="fa-solid fa-angles-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -260,6 +337,110 @@
                     <button class="btn-outline border-none" id="cancelTestMailBtn">Hủy bỏ</button>
                     <button class="btn-primary" id="sendTestMailBtn"><i class="fa-solid fa-paper-plane"></i> Gửi
                         Ngay</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL CHI TIẾT LỊCH SỬ EMAIL (LOG) -->
+        <!-- ========================================== -->
+        <div class="modal-overlay" id="emailLogModalOverlay">
+            <div class="modal-box" style="width: 550px;">
+                <div class="modal-header">
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-info text-blue"></i> Chi tiết Email #<span id="logIdLabel"></span>
+                    </h3>
+                    <button class="btn-icon" onclick="document.getElementById('emailLogModalOverlay').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body" style="padding: 24px; line-height: 1.6;">
+                    <p style="margin-bottom: 8px; font-size: 14px;"><strong>Gửi đến:</strong> <span id="logToEmail" class="text-blue fw-600"></span></p>
+                    <p style="margin-bottom: 8px; font-size: 14px;"><strong>Tiêu đề:</strong> <span id="logSubject"></span></p>
+
+                    <div id="logErrorBox" style="display: none; background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin: 16px 0;">
+                        <strong class="text-red" style="font-size: 13px;">NGUYÊN NHÂN LỖI:</strong>
+                        <p id="logErrorMessage" style="margin: 4px 0 0 0; color: #7f1d1d; font-size: 13px; font-family: monospace;"></p>
+                    </div>
+
+                    <p style="margin-bottom: 8px; font-size: 14px; margin-top: 16px;"><strong>Nội dung tóm tắt (Snippet):</strong></p>
+                    <div id="logSnippet" style="background: #f8fafc; padding: 12px; border-radius: 6px; font-size: 13px; color: #475569; border: 1px solid #e2e8f0; min-height: 80px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL: TẠO DỮ LIỆU EMAIL GIẢ ĐỂ TEST -->
+        <!-- ========================================== -->
+        <div class="modal-overlay" id="mockLogModalOverlay">
+            <div class="modal-box" style="width: 500px;">
+                <div class="modal-header">
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-bug text-red"></i> Tạo Lịch Sử Email (Test)
+                    </h3>
+                    <button class="btn-icon" id="closeMockModalBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">EMAIL NGƯỜI NHẬN <span class="text-red">*</span></label>
+                        <input type="email" id="mockEmailInput" class="form-control" placeholder="Ví dụ: sinhvien123@dtu.edu.vn">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">TIÊU ĐỀ (TÙY CHỌN)</label>
+                        <input type="text" id="mockSubjectInput" class="form-control" value="[TEST] Mô phỏng email hệ thống">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">CHỌN TRẠNG THÁI <span class="text-red">*</span></label>
+                        <select id="mockStatusSelect" class="form-control">
+                            <option value="failed">Thất bại (Failed) - Dùng để test gửi lại</option>
+                            <option value="pending">Chờ gửi (Pending)</option>
+                            <option value="sent">Đã gửi (Sent)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-outline border-none" id="cancelMockModalBtn">Hủy bỏ</button>
+                    <button class="btn-primary" id="saveMockLogBtn" style="background: #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                        <i class="fa-solid fa-database"></i> Tạo Log Giả
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL: CHỈNH SỬA & GỬI LẠI EMAIL (EDIT & RESEND) -->
+        <!-- ========================================== -->
+        <div class="modal-overlay" id="editResendModalOverlay">
+            <div class="modal-box" style="width: 550px;">
+                <div class="modal-header">
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-pen-to-square text-purple"></i> Sửa & Gửi lại Email #<span id="editResendIdLabel"></span>
+                    </h3>
+                    <button class="btn-icon" id="closeEditResendBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editResendId">
+                    <div class="form-group">
+                        <label class="form-label">EMAIL NGƯỜI NHẬN <span class="text-red">*</span></label>
+                        <input type="email" id="editResendEmail" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">TIÊU ĐỀ <span class="text-red">*</span></label>
+                        <input type="text" id="editResendSubject" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">NỘI DUNG TÓM TẮT (SNIPPET) <span class="text-red">*</span></label>
+                        <textarea id="editResendBody" class="form-control" rows="6"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-outline border-none" id="cancelEditResendBtn">Hủy</button>
+                    <button class="btn-primary" id="saveEditResendBtn" style="background: #a855f7; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);">
+                        <i class="fa-solid fa-paper-plane"></i> Lưu & Gửi lại
+                    </button>
                 </div>
             </div>
         </div>
@@ -488,7 +669,7 @@
                         // Đóng Modal Quản lý lại
                         manageModal.style.display = 'none';
 
-                        // Kích hoạt logic mở Modal Sửa (tái sử dụng API ở bước trước)
+                        // Kích hoạt logic mở Modal Sửa (tái sử dụng API )
                         const id = this.getAttribute('data-id');
                         modalTitle.textContent = "Đang tải dữ liệu...";
                         openModal(); // Hàm mở Modal Edit đã viết ở bước 3
@@ -536,7 +717,137 @@
                 });
 
                 // ==========================================
-                // 5. XỬ LÝ MODAL TEST GỬI MAIL
+                // 5.XỬ LÝ NÚT XEM CHI TIẾT LOG EMAIL
+                // ==========================================
+                const btnDetails = document.querySelectorAll('.btn-detail-email');
+                const logModal = document.getElementById('emailLogModalOverlay');
+
+                btnDetails.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+
+                        // Gọi API lấy dữ liệu chi tiết của dòng Log
+                        fetch(`/api/admin/emails/logs/${id}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                document.getElementById('logIdLabel').textContent = data.id;
+                                document.getElementById('logToEmail').textContent = data.toEmail;
+                                document.getElementById('logSubject').textContent = data.subject || 'Không có tiêu đề';
+                                document.getElementById('logSnippet').textContent = data.bodySnippet || 'Không có dữ liệu';
+
+                                // Hiển thị khung Lỗi nếu status là failed
+                                const errorBox = document.getElementById('logErrorBox');
+                                if (data.status.toLowerCase() === 'failed' && data.errorMessage) {
+                                    errorBox.style.display = 'block';
+                                    document.getElementById('logErrorMessage').textContent = data.errorMessage;
+                                } else {
+                                    errorBox.style.display = 'none';
+                                }
+
+                                logModal.style.display = 'flex'; // Mở modal
+                            })
+                            .catch(err => alert("Không lấy được thông tin chi tiết!"));
+                    });
+                });
+
+               const btnResends = document.querySelectorAll('.btn-resend-email');
+
+                btnResends.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+
+                        if(confirm('Bạn có chắc chắn muốn thử gửi lại Email này không?')) {
+                            const originalIcon = this.innerHTML;
+                            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                            this.disabled = true;
+
+                            fetch(`/api/admin/emails/resend/${id}`, { method: 'POST' })
+                                .then(res => {
+                                    if(!res.ok) throw new Error("Gửi lại thất bại! Xem chi tiết lỗi ở cột Thao tác.");
+                                    return res.text();
+                                })
+                                .then(msg => {
+                                    alert(msg || "Đã xử lý gửi lại thành công!");
+                                    window.location.reload();
+                                })
+                                .catch(err => {
+                                    alert(err.message);
+                                    this.innerHTML = originalIcon;
+                                    this.disabled = false;
+                                });
+                        }
+                    });
+                });
+
+                // ==========================================
+                // XỬ LÝ NÚT CHỈNH SỬA & GỬI LẠI (EDIT & RESEND)
+                // ==========================================
+                const editResendModal = document.getElementById('editResendModalOverlay');
+                const btnEditResends = document.querySelectorAll('.btn-edit-resend');
+                const closeEditResendBtns = [document.getElementById('closeEditResendBtn'), document.getElementById('cancelEditResendBtn')];
+                const btnSaveEditResend = document.getElementById('saveEditResendBtn');
+
+                const closeEditResendModal = () => editResendModal.style.display = 'none';
+                closeEditResendBtns.forEach(btn => btn?.addEventListener('click', closeEditResendModal));
+
+                btnEditResends.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+
+                        fetch(`/api/admin/emails/logs/${id}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                document.getElementById('editResendIdLabel').textContent = data.id;
+                                document.getElementById('editResendId').value = data.id;
+                                document.getElementById('editResendEmail').value = data.toEmail;
+                                document.getElementById('editResendSubject').value = data.subject || '';
+                                document.getElementById('editResendBody').value = data.bodySnippet || '';
+
+                                editResendModal.style.display = 'flex';
+                            })
+                            .catch(err => alert("Không lấy được dữ liệu email này!"));
+                    });
+                });
+
+                if (btnSaveEditResend) {
+                    btnSaveEditResend.addEventListener('click', function() {
+                        const id = document.getElementById('editResendId').value;
+                        const email = document.getElementById('editResendEmail').value.trim();
+                        const subject = document.getElementById('editResendSubject').value.trim();
+                        const body = document.getElementById('editResendBody').value.trim();
+
+                        if (!email || !subject || !body) {
+                            alert("Vui lòng nhập đủ các thông tin bắt buộc!");
+                            return;
+                        }
+
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+                        this.disabled = true;
+
+                        fetch(`/api/admin/emails/edit-resend/${id}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ toEmail: email, subject: subject, bodySnippet: body })
+                        })
+                        .then(res => {
+                            if (!res.ok) throw new Error("Thất bại. Xem lại cấu hình mạng.");
+                            return res.text();
+                        })
+                        .then(msg => {
+                            alert(msg);
+                            window.location.reload();
+                        })
+                        .catch(err => {
+                            alert(err.message);
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                        });
+                    });
+                }
+
+                // ==========================================
+                // 7. XỬ LÝ MODAL TEST GỬI MAIL
                 // ==========================================
                 const testMailModal = document.getElementById('testMailModalOverlay');
                 const btnOpenTestMail = document.getElementById('btnOpenTestMail');
@@ -592,6 +903,61 @@
                     });
                 }
 
+                // ==========================================
+                // TÍNH NĂNG TẠO DỮ LIỆU EMAIL LỖI TÙY CHỌN (TEST)
+                // ==========================================
+                const mockModal = document.getElementById('mockLogModalOverlay');
+                const btnOpenMock = document.getElementById('btnCreateTestFail'); // Cái nút màu đỏ ngoài bảng
+                const btnCloseMock = document.getElementById('closeMockModalBtn');
+                const btnCancelMock = document.getElementById('cancelMockModalBtn');
+                const btnSaveMock = document.getElementById('saveMockLogBtn');
+
+                // Hàm Mở/Đóng
+                const openMockModal = () => mockModal.style.display = 'flex';
+                const closeMockModal = () => mockModal.style.display = 'none';
+
+                if (btnOpenMock) btnOpenMock.addEventListener('click', openMockModal);
+                if (btnCloseMock) btnCloseMock.addEventListener('click', closeMockModal);
+                if (btnCancelMock) btnCancelMock.addEventListener('click', closeMockModal);
+
+                // Gửi Form
+                if (btnSaveMock) {
+                    btnSaveMock.addEventListener('click', function() {
+                        const email = document.getElementById('mockEmailInput').value.trim();
+                        const subject = document.getElementById('mockSubjectInput').value.trim();
+                        const status = document.getElementById('mockStatusSelect').value;
+
+                        if (!email) {
+                            alert("Vui lòng nhập Email người nhận!");
+                            return;
+                        }
+
+                        const originalHtml = this.innerHTML;
+                        this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+                        this.disabled = true;
+
+                        // Gọi API gửi JSON lên Server
+                        fetch('/api/admin/emails/mock', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                toEmail: email,
+                                subject: subject,
+                                status: status
+                            })
+                        })
+                        .then(res => res.text())
+                        .then(msg => {
+                            alert(msg || "Đã tạo dữ liệu giả thành công!");
+                            window.location.reload();
+                        })
+                        .catch(err => {
+                            alert("Có lỗi xảy ra: " + err);
+                            this.innerHTML = originalHtml;
+                            this.disabled = false;
+                        });
+                    });
+                }
             });
         </script>
     </div>

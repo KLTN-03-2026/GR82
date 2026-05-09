@@ -1,0 +1,121 @@
+/* ==========================================================================
+   ACCOUNT DROPDOWN MENU
+   ========================================================================== */
+.account-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Thêm padding để user dễ dàng rê chuột từ thẻ cha xuống menu mà không bị mất hover */
+.dropdown-trigger {
+    cursor: pointer;
+    padding-bottom: 10px;
+    margin-bottom: -10px;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #ffffff;
+    min-width: 240px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 8px 0;
+    list-style: none;
+    z-index: 1000;
+
+    /* Đổ bóng đổ siêu xịn theo phong cách TailwindCSS */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+    /* Hiệu ứng ẩn/hiện mượt mà */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px); /* Đẩy menu xuống dưới 15px */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* KÍCH HOẠT HIỂN THỊ KHI RÊ CHUỘT */
+.account-dropdown-wrapper:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0); /* Kéo menu trượt nhẹ lên vị trí gốc */
+}
+
+/* Định dạng nội dung bên trong Menu */
+.dropdown-header {
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-header strong {
+    color: #0f172a;
+    font-size: 15px;
+}
+
+.dropdown-header .text-gray {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.dropdown-menu hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 4px 0;
+}
+
+/* Nút bấm và Thẻ a trong Menu */
+.dropdown-menu li a,
+.dropdown-menu li button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 20px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s, color 0.2s;
+}
+
+.dropdown-menu li a i,
+.dropdown-menu li button i {
+    margin-right: 14px;
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+/* Trạng thái Hover của các mục */
+.dropdown-menu li a:hover,
+.dropdown-menu li button:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.dropdown-menu li a:hover i,
+.dropdown-menu li button:hover i {
+    color: #b91c1c; /* Chuyển icon sang đỏ DTU khi hover */
+}
+
+/* Riêng nút Đăng xuất cấu hình màu nổi bật */
+.dropdown-menu li button.text-red {
+    color: #b91c1c;
+}
+
+.dropdown-menu li button.text-red i {
+    color: #b91c1c;
+}
+
+.dropdown-menu li button.text-red:hover {
+    background: #fef2f2;
+    color: #991b1b;
+}

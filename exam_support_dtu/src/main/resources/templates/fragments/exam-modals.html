@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+</head>
+
+<body>
+
+    <!-- PDF Preview Modal Fragment -->
+    <div th:fragment="pdf_preview_modal">
+        <div class="modal-overlay" id="pdfPreviewModal" onclick="if(event.target === this) closePdfPreview()">
+            <div class="modal-box pdf-modal-box">
+                <div class="modal-header">
+                    <div class="modal-header-left">
+                        <span class="material-symbols-outlined"
+                            style="color: #ef4444; font-size: 24px;">picture_as_pdf</span>
+                        <h3 id="pdfPreviewTitle">Xem trước lịch thi</h3>
+                    </div>
+                    <button class="close-modal-btn" onclick="closePdfPreview()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <iframe id="pdfPreviewFrame" src="" class="pdf-frame"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .pdf-modal-box {
+                max-width: 1000px;
+                height: 85vh;
+                border-radius: 20px;
+                overflow: hidden;
+            }
+
+            .modal-header-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .pdf-frame {
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+        </style>
+
+        <script>
+            function openPdfPreview(fileId, fileName) {
+                const modal = document.getElementById('pdfPreviewModal');
+                const frame = document.getElementById('pdfPreviewFrame');
+                const title = document.getElementById('pdfPreviewTitle');
+
+                if (title) title.textContent = fileName || 'Xem trước lịch thi';
+                if (frame) frame.src = `/api/user/files/view/${fileId}#toolbar=0`;
+                if (modal) modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closePdfPreview() {
+                const modal = document.getElementById('pdfPreviewModal');
+                const frame = document.getElementById('pdfPreviewFrame');
+
+                if (modal) modal.classList.remove('active');
+                if (frame) frame.src = '';
+                document.body.style.overflow = '';
+            }
+
+            function openPdfPreviewFromBtn(btn) {
+                const id = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+                if (id && id !== '0') {
+                    openPdfPreview(id, name);
+                } else {
+                    alert("Tệp này hiện chưa hỗ trợ xem trước.");
+                }
+            }
+        </script>
+    </div>
+
+    <!-- Schedule Detail Modal Fragment -->
+    <div th:fragment="schedule_detail_modal">
+        <!-- Modal xem chi tiết lịch thi (Phòng thi) -->
+        <div class="modal-overlay" id="modalOverlay" onclick="if(event.target === this) this.classList.remove('active')">
+            <div class="modal-box" id="detailModal">
+                <div class="modal-header">
+                    <h3>Phòng thi cho môn <span id="subjectCode" style="color: var(--primary);"></span></h3>
+                    <div class="close-modal" id="closeModalBtn"
+                        onclick="document.getElementById('modalOverlay').classList.remove('active')">
+                        <span class="material-symbols-outlined">close</span>
+                    </div>
+                </div>
+
+                <div class="modal-body">
+                    <div class="modal-search-wrapper">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" id="roomSearchInput" placeholder="Nhập số phòng, mssv,..."
+                            oninput="filterRooms(this.value)">
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <p>Mã môn</p>
+                            <h4 id="detail-courseCode">--</h4>
+                        </div>
+                        <div class="info-item">
+                            <p>Tín chỉ</p>
+                            <h4 id="detail-credit">--</h4>
+                        </div>
+                        <div class="info-item">
+                            <p>Học kỳ</p>
+                            <h4 id="detail-semester">--</h4>
+                        </div>
+                        <div class="info-item">
+                            <p>Lần thi</p>
+                            <h4 id="detail-attempt">--</h4>
+                        </div>
+                    </div>
+
+                    <h4 class="section-title">Danh sách phòng thi được phân bổ</h4>
+                    <div class="room-grid" id="roomGrid">
+                        <!-- Danh sách phòng thi sẽ được render ở đây -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal xem danh sách sinh viên trong phòng -->
+        <div class="modal-overlay" id="studentModalOverlay" style="z-index: 10001;" onclick="if(event.target === this) this.classList.remove('active')">
+            <div class="modal-box" style="width: 700px; max-width: 95vw;">
+                <div class="modal-header">
+                    <h3>Danh sách sinh viên <span id="studentModalRoomName" style="color: var(--primary);"></span></h3>
+                    <div class="modal-search-wrapper" style="margin: 0 20px; flex: 1; max-width: 300px;">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" id="studentSearchInput" placeholder="Tìm tên hoặc mã SV..."
+                            oninput="filterStudents(this.value)">
+                    </div>
+                    <div class="close-modal" id="closeStudentModalBtn"
+                        onclick="document.getElementById('studentModalOverlay').classList.remove('active')">
+                        <span class="material-symbols-outlined">close</span>
+                    </div>
+                </div>
+                <div class="modal-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="student-table">
+                            <thead>
+                                <tr>
+                                    <th width="10%">SBD</th>
+                                    <th width="20%">Mã SV</th>
+                                    <th width="40%">Họ và tên</th>
+                                    <th width="30%">Lớp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-table-body">
+                                <!-- Danh sách sinh viên sẽ được render ở đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            :root {
+                --modal-primary: #b91c1c;
+                --modal-soft-red: #fef2f2;
+                --modal-border: #e2e8f0;
+                --modal-text-muted: #64748b;
+            }
+
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(6px);
+                display: none;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            }
+
+            .modal-overlay.active {
+                display: flex;
+            }
+
+            .modal-box {
+                background: #fff;
+                width: 100%;
+                max-width: 800px;
+                height: auto;
+                max-height: 90vh;
+                border-radius: 20px;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            }
+
+            .pdf-modal-box {
+                max-width: 1000px;
+                height: 85vh;
+            }
+
+            .modal-header {
+                padding: 16px 24px;
+                border-bottom: 1px solid #f1f5f9;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .modal-header-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .modal-header h3 {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0;
+            }
+
+            .modal-body {
+                flex: 1;
+                background: #f8fafc;
+                padding: 24px;
+                overflow-y: auto;
+            }
+
+            .pdf-frame {
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+
+            .close-modal-btn,
+            .close-modal {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                border: none;
+                cursor: pointer;
+                background: #f1f5f9;
+                color: #64748b;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+
+            .close-modal-btn:hover,
+            .close-modal:hover {
+                background: #fee2e2;
+                color: #b91c1c;
+            }
+
+            .modal-search-wrapper {
+                display: flex;
+                align-items: center;
+                background: #fff;
+                border: 1px solid var(--modal-border);
+                border-radius: 8px;
+                padding: 8px 16px;
+                margin-bottom: 20px;
+            }
+
+            .modal-search-wrapper .material-symbols-outlined {
+                color: #94a3b8;
+                margin-right: 8px;
+            }
+
+            .modal-search-wrapper input {
+                border: none;
+                outline: none;
+                width: 100%;
+                font-size: 14px;
+            }
+
+            .info-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                margin-bottom: 24px;
+                background: #fff;
+                padding: 16px;
+                border-radius: 12px;
+                border: 1px solid var(--modal-border);
+            }
+
+            .info-item p {
+                font-size: 10px;
+                font-weight: 700;
+                color: var(--modal-text-muted);
+                text-transform: uppercase;
+                margin-bottom: 4px;
+            }
+
+            .info-item h4 {
+                font-size: 14px;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0;
+            }
+
+            .section-title {
+                font-size: 14px;
+                font-weight: 700;
+                color: #475569;
+                margin: 0 0 12px 0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .section-title::after {
+                content: "";
+                flex: 1;
+                height: 1px;
+                background: var(--modal-border);
+            }
+
+            .room-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 16px;
+            }
+
+            .room-card-mini {
+                background: #fff;
+                border: 1px solid var(--modal-border);
+                border-radius: 12px;
+                padding: 16px;
+                transition: all 0.2s;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .room-card-mini:hover {
+                border-color: var(--modal-primary);
+                box-shadow: 0 4px 12px rgba(185, 28, 28, 0.08);
+            }
+
+            .room-highlight {
+                border-color: var(--modal-primary) !important;
+                box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2);
+            }
+
+            .student-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .student-table th {
+                background: #f8fafc;
+                padding: 12px;
+                text-align: left;
+                font-size: 12px;
+                font-weight: 700;
+                color: #64748b;
+                border-bottom: 1px solid #e2e8f0;
+                position: sticky;
+                top: 0;
+            }
+
+            .student-table td {
+                padding: 12px;
+                font-size: 13px;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .room-card-mini-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .badge-ready {
+                background: #f0fdf4;
+                color: #166534;
+                font-size: 10px;
+                font-weight: 700;
+                padding: 2px 8px;
+                border-radius: 4px;
+            }
+
+            .room-info-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                font-size: 12px;
+                color: #64748b;
+            }
+
+            .room-info-list span {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .btn-room-detail-mini {
+                width: 100%;
+                padding: 8px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #475569;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                cursor: pointer;
+            }
+
+            .btn-room-detail-mini:hover {
+                background: #f1f5f9;
+                border-color: #cbd5e1;
+                color: #0f172a;
+            }
+
+            .table-responsive {
+                overflow-x: auto;
+                max-height: 60vh;
+            }
+        </style>
+
+
+        <script>
+            function showScheduleDetail(scheduleId) {
+                const modalOverlay = document.getElementById('modalOverlay');
+                const subjectCodeDisplay = document.getElementById('subjectCode');
+                const roomGrid = document.getElementById('roomGrid');
+
+                const detailCourseCode = document.getElementById('detail-courseCode');
+                const detailCredit = document.getElementById('detail-credit');
+                const detailSemester = document.getElementById('detail-semester');
+                const detailAttempt = document.getElementById('detail-attempt');
+
+                modalOverlay.classList.add('active');
+                if (subjectCodeDisplay) subjectCodeDisplay.textContent = "Đang tải...";
+                if (roomGrid) roomGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 20px;">Đang tải danh sách phòng thi...</p>';
+
+                fetch('/api/user/schedules/' + scheduleId)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Không tìm thấy dữ liệu lịch thi");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (subjectCodeDisplay) subjectCodeDisplay.textContent = data.courseName;
+                        if (detailCourseCode) detailCourseCode.textContent = data.courseCode || '--';
+                        if (detailCredit) detailCredit.textContent = (data.credit || '0') + ' tín chỉ';
+                        if (detailSemester) detailSemester.textContent = data.semester || '--';
+                        if (detailAttempt) detailAttempt.textContent = 'Lần ' + (data.attempt || '1');
+
+                        if (roomGrid) {
+                            roomGrid.innerHTML = '';
+                            if (data.rooms && data.rooms.length > 0) {
+                                data.rooms.forEach(room => {
+                                    const dateStr = room.examDate || "Chưa xếp ngày";
+                                    const timeStr = room.examTime || "Chưa xếp giờ";
+                                    const locationStr = room.location || "Chưa rõ cơ sở";
+
+                                    const roomCard = `
+                                        <div class="room-card-mini">
+                                            <div class="room-card-mini-header">
+                                                <span class="room-name" style="font-weight:700; color:#0f172a;">${room.roomName}</span>
+                                                <span class="badge-ready">SẴN SÀNG</span>
+                                            </div>
+                                            <div class="room-info-list">
+                                                <span><span class="material-symbols-outlined">location_on</span> ${locationStr}</span>
+                                                <span><span class="material-symbols-outlined">calendar_today</span> ${dateStr}</span>
+                                                <span><span class="material-symbols-outlined">schedule</span> ${timeStr}</span>
+                                            </div>
+                                            <button type="button" class="btn-room-detail-mini" onclick="showRoomStudents(${room.id}, '${room.roomName}')">
+                                                <span class="material-symbols-outlined" style="font-size:16px;">groups</span> Danh sách SV
+                                            </button>
+                                        </div>
+                                    `;
+                                    roomGrid.insertAdjacentHTML('beforeend', roomCard);
+                                });
+                            } else {
+                                roomGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 20px;">Môn này chưa có thông tin phòng thi chi tiết.</p>';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        if (roomGrid) roomGrid.innerHTML = `<p style="grid-column: 1/-1; color:red; text-align:center; padding: 20px;">Lỗi: ${error.message}</p>`;
+                    });
+            }
+
+            function showRoomStudents(roomId, roomName) {
+                const studentModalOverlay = document.getElementById('studentModalOverlay');
+                const studentModalRoomName = document.getElementById('studentModalRoomName');
+                const studentTableBody = document.getElementById('student-table-body');
+
+                if (studentModalRoomName && roomName) {
+                    studentModalRoomName.textContent = "- Phòng " + roomName;
+                }
+
+                studentModalOverlay.classList.add('active');
+                if (studentTableBody) studentTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Đang tải danh sách sinh viên...</td></tr>';
+
+                fetch('/api/user/rooms/' + roomId + '/students')
+                    .then(res => {
+                        if (!res.ok) throw new Error("Không thể tải danh sách sinh viên");
+                        return res.json();
+                    })
+                    .then(students => {
+                        if (studentTableBody) {
+                            studentTableBody.innerHTML = '';
+                            if (students && students.length > 0) {
+                                students.forEach(st => {
+                                    studentTableBody.innerHTML += `
+                                        <tr>
+                                            <td style="text-align:center;"><strong>${st.seatNumber || ''}</strong></td>
+                                            <td>${st.studentCode || ''}</td>
+                                            <td>${st.fullName || ''}</td>
+                                            <td>${st.studentClass || ''}</td>
+                                        </tr>
+                                    `;
+                                });
+                            } else {
+                                studentTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Phòng này chưa có sinh viên.</td></tr>';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        if (studentTableBody) studentTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:red;">Lỗi khi tải dữ liệu!</td></tr>';
+                    });
+            }
+
+            function filterRooms(term) {
+                const val = term.toLowerCase().trim();
+                const cards = document.querySelectorAll('.room-card-mini');
+                cards.forEach(card => {
+                    const text = card.innerText.toLowerCase();
+                    card.style.display = text.includes(val) ? '' : 'none';
+                });
+            }
+
+            function filterStudents(term) {
+                const val = term.toLowerCase().trim();
+                const rows = document.querySelectorAll('#student-table-body tr');
+                rows.forEach(row => {
+                    if (row.cells.length < 4) return;
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(val) ? '' : 'none';
+                });
+            }
+        </script>
+    </div>
+
+</body>
+
+</html>

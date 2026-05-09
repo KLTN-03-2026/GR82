@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html th:replace="~{admin-layout :: admin_layout(~{::#dashboard-content}, '/css/admin-dashboard.css')}"
+      xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div id="dashboard-content" class="dashboard-stats-wrapper">
+    <!-- Header with Filter -->
+    <div class="stats-header">
+        <h2>Tổng quan hệ thống</h2>
+        <div class="filter-group">
+            <select id="timeFilter">
+                <option value="1">Hôm nay</option>
+                <option value="7" selected>7 ngày qua</option>
+                <option value="30">30 ngày qua</option>
+                <option value="0">Tất cả</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Stat Boxes Grid -->
+    <div class="stats-grid">
+        <!-- Page Views -->
+        <div class="stat-card">
+            <div class="stat-icon-wrapper bg-blue-light">
+                <i class="fa-solid fa-eye"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Lượt truy cập</div>
+                <div class="value counter" id="totalPageViews">0</div>
+            </div>
+        </div>
+
+        <!-- New Users -->
+        <div class="stat-card">
+            <div class="stat-icon-wrapper bg-green-light">
+                <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Người dùng mới</div>
+                <div class="value counter" id="newUsers">0</div>
+            </div>
+        </div>
+
+        <!-- New Interests -->
+        <div class="stat-card">
+            <div class="stat-icon-wrapper bg-purple-light">
+                <i class="fa-solid fa-heart"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Lượt quan tâm</div>
+                <div class="value counter" id="newInterests">0</div>
+            </div>
+        </div>
+
+        <!-- Pending Documents -->
+        <div class="stat-card" id="pendingDocsCard">
+            <div class="stat-icon-wrapper bg-orange-light">
+                <i class="fa-solid fa-file-shield"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Chờ duyệt</div>
+                <div class="value counter" id="pendingDocs">0</div>
+            </div>
+        </div>
+
+        <!-- Failed Emails -->
+        <div class="stat-card" id="failedEmailsCard">
+            <div class="stat-icon-wrapper bg-red-light">
+                <i class="fa-solid fa-envelope-circle-check"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Email lỗi</div>
+                <div class="value counter" id="failedEmails">0</div>
+            </div>
+        </div>
+
+        <!-- Crawl Errors -->
+        <div class="stat-card" id="crawlErrorsCard">
+            <div class="stat-icon-wrapper bg-red-light">
+                <i class="fa-solid fa-bug"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Lỗi cào dữ liệu</div>
+                <div class="value counter" id="crawlErrors">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+        <!-- Line Chart -->
+        <div class="chart-card">
+            <h4>Xu hướng hoạt động</h4>
+            <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Doughnut Chart -->
+        <div class="chart-card">
+            <h4>Trạng thái tài liệu</h4>
+            <div class="chart-container">
+                <canvas id="doughnutChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities Row -->
+    <div class="activities-wrapper">
+        <div class="chart-card">
+            <div class="card-header-flex">
+                <h4><i class="fa-solid fa-clock-rotate-left"></i> Nhật ký hoạt động hệ thống</h4>
+                <a href="/admin/logs" class="view-all-link">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            
+            <div class="timeline-compact">
+                <div th:each="log : ${recentLogs}" class="timeline-item-stats">
+                    <div class="timeline-side">
+                        <div class="timeline-dot" th:classappend="${log.logLevel == 'ERROR' ? 'dot-red' : (log.logLevel == 'WARNING' ? 'dot-orange' : 'dot-blue')}"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <span class="action-tag" th:classappend="${log.logLevel == 'ERROR' ? 'tag-red' : (log.logLevel == 'WARNING' ? 'tag-orange' : 'tag-blue')}" th:text="${log.action}">LOGIN</span>
+                            <span class="time-ago"><i class="fa-regular fa-clock"></i> <span th:text="${log.getTimeAgo()}">10 PHÚT TRƯỚC</span></span>
+                        </div>
+                        <p class="log-details" th:text="${log.details}">Quản trị viên đã đăng nhập vào hệ thống.</p>
+                    </div>
+                </div>
+                
+                <div th:if="${#lists.isEmpty(recentLogs)}" class="empty-logs">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <p>Chưa có hoạt động nào được ghi lại.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let lineChart = null;
+        let doughnutChart = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial load
+            updateDashboard(7);
+
+            // Filter change event
+            document.getElementById('timeFilter').addEventListener('change', function() {
+                updateDashboard(this.value);
+            });
+        });
+
+        function updateDashboard(days) {
+            fetch(`/api/admin/dashboard/stats?days=${days}`)
+                .then(res => res.json())
+                .then(data => {
+                    // 1. Update Stat Boxes with animation
+                    animateValue("totalPageViews", data.totalPageViews);
+                    animateValue("newUsers", data.newUsers);
+                    animateValue("newInterests", data.newInterests);
+                    animateValue("pendingDocs", data.pendingDocuments);
+                    animateValue("failedEmails", data.failedEmails);
+                    animateValue("crawlErrors", data.crawlErrors);
+
+                    // 2. Update warnings classes
+                    updateWarningClasses(data);
+
+                    // 3. Update Charts
+                    renderLineChart(data);
+                    renderDoughnutChart(data);
+                })
+                .catch(err => console.error('Error fetching stats:', err));
+        }
+
+        function animateValue(id, endValue) {
+            const obj = document.getElementById(id);
+            const startValue = parseInt(obj.innerText) || 0;
+            const duration = 1000;
+            let startTimestamp = null;
+            
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (endValue - startValue) + startValue);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function updateWarningClasses(data) {
+            const pendingCard = document.getElementById('pendingDocsCard');
+            const emailCard = document.getElementById('failedEmailsCard');
+            const crawlCard = document.getElementById('crawlErrorsCard');
+
+            if (data.pendingDocuments > 0) pendingCard.classList.add('warning');
+            else pendingCard.classList.remove('warning');
+
+            if (data.failedEmails > 0) emailCard.classList.add('danger');
+            else emailCard.classList.remove('danger');
+
+            if (data.crawlErrors > 0) crawlCard.classList.add('danger');
+            else crawlCard.classList.remove('danger');
+        }
+
+        function renderLineChart(data) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            
+            if (lineChart) {
+                lineChart.destroy();
+            }
+
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Lượt truy cập',
+                            data: data.pageViewData,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Người dùng mới',
+                            data: data.userData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Lượt quan tâm',
+                            data: data.interestData,
+                            borderColor: '#9333ea',
+                            backgroundColor: 'transparent',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderDoughnutChart(data) {
+            const ctx = document.getElementById('doughnutChart').getContext('2d');
+            
+            if (doughnutChart) {
+                doughnutChart.destroy();
+            }
+
+            doughnutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Đã duyệt', 'Chờ duyệt', 'Từ chối'],
+                    datasets: [{
+                        data: [data.approvedDocs, data.pendingDocs, data.rejectedDocs],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    </script>
+</div>
+
+</body>
+</html>

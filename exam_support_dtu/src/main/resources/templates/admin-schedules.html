@@ -3,10 +3,38 @@
 <body>
 
 <div id="schedule-content" >
-    <div class="page-header-wrapper">
-        <div class="page-title">
-            <h2>Chi Tiết Lịch Thi</h2>
+    <div class="stats-overview">
+        <div class="stat-box">
+            <div class="stat-icon bg-blue-light text-blue"><i class="fa-solid fa-calendar-days"></i></div>
+            <div class="stat-text">
+                <p>Tổng môn thi</p>
+                <h4 th:text="${totalSubjects}">0</h4>
+            </div>
         </div>
+        <div class="stat-box">
+            <div class="stat-icon bg-orange-light text-orange"><i class="fa-solid fa-door-open"></i></div>
+            <div class="stat-text">
+                <p>Tổng phòng thi</p>
+                <h4 th:text="${totalRooms}">0</h4>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-icon bg-green-light text-green"><i class="fa-solid fa-user-graduate"></i></div>
+            <div class="stat-text">
+                <p>Sinh viên dự thi</p>
+                <h4 th:text="${totalStudents}">0</h4>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-icon bg-red-light text-red"><i class="fa-solid fa-bell"></i></div>
+            <div class="stat-text">
+                <p>Lượt ĐK nhận thông báo</p>
+                <h4 th:text="${totalInterests}">0</h4>
+            </div>
+        </div>
+
+    </div>
+    <div class="page-header-wrapper">
         <div class="header-actions">
             <div class="table-search">
                 <i class="fa-solid fa-magnifying-glass"></i>
@@ -24,9 +52,10 @@
                 <tr>
                     <th width="5%">STT</th>
                     <th width="15%">MÃ MÔN</th>
-                    <th width="35%">TÊN MÔN</th>
+                    <th width="30%">TÊN MÔN</th>
                     <th width="10%" style="text-align: center;">TÍN CHỈ</th>
                     <th width="10%">HỌC KỲ</th>
+                    <th width="15%" style="text-align: center;">SV QUAN TÂM</th>
                     <th width="15%" style="text-align: center;">THAO TÁC</th>
                 </tr>
                 </thead>
@@ -37,6 +66,12 @@
                     <td th:text="${subject?.courseName}">Cơ sở dữ liệu</td>
                     <td style="text-align: center;" th:text="${subject?.credit}">3</td>
                     <td th:text="${subject?.semester != null ? 'Học kỳ ' + subject.semester : ''}">Học kỳ 1</td>
+                    <td style="text-align: center;">
+                        <span style="background: #e0f2fe; color: #0284c7; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-users"></i>
+                            <span th:text="${subject?.interestedCount != null ? subject.interestedCount : 0}">0</span>
+                        </span>
+                    </td>
                     <td style="text-align: center;">
                         <div class="action-buttons">
                             <button class="btn-icon btn-detail" title="Xem chi tiết"

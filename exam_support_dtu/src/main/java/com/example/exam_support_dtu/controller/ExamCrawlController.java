@@ -1,5 +1,6 @@
 package com.example.exam_support_dtu.controller;
 
+import com.example.exam_support_dtu.annotation.LoggableAction;
 import com.example.exam_support_dtu.entity.*;
 import com.example.exam_support_dtu.enums.FileStatus;
 import com.example.exam_support_dtu.enums.FileType;
@@ -7,12 +8,14 @@ import com.example.exam_support_dtu.repository.ExamOriginalRepository;
 import com.example.exam_support_dtu.repository.FilesRepository;
 import com.example.exam_support_dtu.service.ExamCrawlService;
 import com.example.exam_support_dtu.service.ExcelParserService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -20,28 +23,32 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RestController
 public class ExamCrawlController {
     private final ExamCrawlService examCrawlService;
     private final ExcelParserService excelParserService;
     private final FilesRepository filesRepository;
-    private final ExamOriginalRepository examOriginalRepository; // Inject thêm cái này
-    public ExamCrawlController(ExamCrawlService examCrawlService, ExcelParserService excelParserService, FilesRepository filesRepository, ExamOriginalRepository examOriginalRepository) {
+    private final ExamOriginalRepository examOriginalRepository;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    public ExamCrawlController(ExamCrawlService examCrawlService, ExcelParserService excelParserService,
+            FilesRepository filesRepository, ExamOriginalRepository examOriginalRepository) {
         this.examCrawlService = examCrawlService;
-        this.excelParserService =  excelParserService;
+        this.excelParserService = excelParserService;
         this.filesRepository = filesRepository;
         this.examOriginalRepository = examOriginalRepository;
     }
-
-
 
     @GetMapping("/read-local")
     public ResponseEntity<String> readLocalFile() {
         String path = "D:\\Tracuulich\\exam_support_dtu\\uploads\\exam_files\\1769527618896_1ce9380f_DS_CHI_168_AS-AU-AW-E-G-I-K-Q-S.xls";
         File file = new File(path);
 
-        if (!file.exists()) return ResponseEntity.badRequest().body("❌ File không tồn tại!");
+        if (!file.exists())
+            return ResponseEntity.badRequest().body("❌ File không tồn tại!");
 
         try (FileInputStream fis = new FileInputStream(file)) {
             String fileName = file.getName();
@@ -78,10 +85,10 @@ public class ExamCrawlController {
 
                         // --- SỬA LỖI TẠI ĐÂY: Thêm dữ liệu giả cho các trường NOT NULL ---
                         // Vì đang test local, ta lấy luôn đường dẫn file làm URL giả
-                        newExam.setFileUrl(path);      // <--- QUAN TRỌNG: Cần dòng này để fix lỗi
-                        newExam.setDownloadUrl(path);  // Set luôn cái này cho chắc nếu DB yêu cầu
-                        newExam.setFileType(FileType.xlsx);    // Set loại file
-                        newExam.setStatus(FileStatus.pending);   // Trạng thái mặc định
+                        newExam.setFileUrl(path); // <--- QUAN TRỌNG: Cần dòng này để fix lỗi
+                        newExam.setDownloadUrl(path); // Set luôn cái này cho chắc nếu DB yêu cầu
+                        newExam.setFileType(FileType.xlsx); // Set loại file
+                        newExam.setStatus(FileStatus.pending); // Trạng thái mặc định
                         // -----------------------------------------------------------------
 
                         return examOriginalRepository.save(newExam);
@@ -101,8 +108,32 @@ public class ExamCrawlController {
     // API Cào X trang
     // URL ví dụ: /api/crawl/pages?total=5 (Cào 5 trang đầu tiên)
     @GetMapping("/api/crawl/pages")
+    @LoggableAction(action = "MANUAL_CRAWL", targetType = "CRAWLER", details = "'Yêu cầu cào ' + #total + ' trang. Kết quả: ' + #result")
     public String crawlPages(@RequestParam(defaultValue = "1") int total) {
         // Gọi hàm loop mới
-        return examCrawlService.CrawlMultiplePages(5);
+        return examCrawlService.CrawlMultiplePages(total);
+    }
+
+    // API Stream Log Realtime
+    @GetMapping(value = "/api/crawl/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamCrawl(@RequestParam(defaultValue = "1") int total) {
+        SseEmitter emitter = new SseEmitter(0L); // Không timeout
+
+        executor.execute(() -> {
+            try {
+                examCrawlService.CrawlMultiplePagesWithCallback(total, log -> {
+                    try {
+                        emitter.send(SseEmitter.event().name("log").data(log));
+                    } catch (IOException e) {
+                        // Client closed connection
+                    }
+                });
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+        });
+
+        return emitter;
     }
 }

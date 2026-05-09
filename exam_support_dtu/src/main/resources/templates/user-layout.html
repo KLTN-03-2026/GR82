@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:fragment="user_layout(content, cssFile, activePage)">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>DTU Supports</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <!-- CSS Layout chung -->
+    <link rel="stylesheet" th:href="@{/css/user/user-layout.css}">
+    <!-- CSS riêng cho từng trang -->
+    <link rel="stylesheet" th:if="${cssFile != null}" th:href="@{${cssFile}}">
+
+    <style>
+        /* ===== USER PROFILE DROPDOWN ===== */
+        .user-profile-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .user-profile-wrapper .avatar-icon {
+            font-size: 28px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .user-profile-wrapper:hover .avatar-icon {
+            color: #334155;
+        }
+
+        .user-dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 10px);
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 4px 10px -3px rgba(0, 0, 0, 0.08);
+            width: 240px;
+            z-index: 9999;
+            padding: 6px 0;
+            animation: dropdownFadeIn 0.15s ease;
+        }
+
+        .user-dropdown-menu.open {
+            display: block;
+        }
+
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            color: #334155;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.15s, color 0.15s;
+        }
+
+        .dropdown-menu-item:hover {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .dropdown-menu-item .material-symbols-outlined {
+            font-size: 20px;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .dropdown-menu-item:hover .material-symbols-outlined {
+            color: #475569;
+        }
+
+        .dropdown-menu-item.danger {
+            color: #ef4444;
+        }
+
+        .dropdown-menu-item.danger .material-symbols-outlined {
+            color: #ef4444;
+        }
+
+        .dropdown-menu-item.danger:hover {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 4px 0;
+        }
+
+        /* ===== AI CHAT WIDGET (Messenger Style) ===== */
+        .ai-chat-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .chat-toggle-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .chat-toggle-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-toggle-btn span {
+            font-size: 32px;
+        }
+
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 520px;
+            background: var(--surface);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            animation: chatSlideUp 0.3s ease;
+        }
+
+        @keyframes chatSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-window.open {
+            display: flex;
+        }
+
+        .chat-header {
+            background: var(--primary);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .close-chat-btn {
+            color: white;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .close-chat-btn:hover {
+            opacity: 1;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .chat-bubble.ai {
+            background: #e2e8f0;
+            color: #334155;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble.user {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-footer {
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .send-chat-btn {
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .typing-indicator {
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrapper">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="container topbar-content">
+                <div class="topbar-left">
+                    <div class="logo">DTU Supports</div>
+
+                    <nav class="nav-links">
+                        <a class="nav-item" th:classappend="${activePage == 'home'} ? 'active' : ''"
+                            th:href="@{/user/home}">Trang chủ</a>
+                        <a class="nav-item" th:classappend="${activePage == 'schedules'} ? 'active' : ''"
+                            th:href="@{/user/schedules}">Lịch thi</a>
+                        <a class="nav-item" th:classappend="${activePage == 'documents'} ? 'active' : ''"
+                            th:href="@{/user/documents}">Tài liệu</a>
+                    </nav>
+                </div>
+
+                <div class="topbar-right">
+                    <button class="icon-btn" title="Trợ giúp" type="button">
+                        <span class="material-symbols-outlined">help</span>
+                    </button>
+
+                    <button class="icon-btn" title="Cài đặt" type="button">
+                        <span class="material-symbols-outlined">settings</span>
+                    </button>
+
+                    <button class="notif-text" type="button">Thông báo</button>
+
+                    <!-- User Avatar + Dropdown -->
+                    <div class="user-profile-wrapper" id="userProfileBtn">
+                        <span class="material-symbols-outlined avatar-icon">account_circle</span>
+
+                        <div class="user-dropdown-menu" id="userDropdown">
+                            <a th:href="@{/user/profile}" class="dropdown-menu-item">
+                                <span class="material-symbols-outlined">person</span>
+                                Hồ Sơ Cá Nhân
+                            </a>
+                            <a th:href="@{/user/my-exams}" class="dropdown-menu-item">
+                                <span class="material-symbols-outlined">event_available</span>
+                                Lịch Thi Của Tôi
+                            </a>
+                            <a th:href="@{/user/my-exams?tab=followed}" class="dropdown-menu-item">
+                                <span class="material-symbols-outlined">bookmark</span>
+                                Lịch Thi Quan Tâm
+                            </a>
+                            <a th:href="@{/user/my-documents}" class="dropdown-menu-item">
+                                <span class="material-symbols-outlined">folder_shared</span>
+                                Tài Liệu Của Tôi
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a th:href="@{/logout}" class="dropdown-menu-item danger">
+                                <span class="material-symbols-outlined">logout</span>
+                                Đăng Xuất
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- NỘI DUNG TỪNG TRANG -->
+        <th:block th:replace="${content}"></th:block>
+
+        <!-- FOOTER -->
+        <footer class="user-footer">
+            <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="footer-brand" style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="color: #b91c1c; font-size: 16px; font-weight: 700;">DTU Supports</span>
+                    <p style="color: #94a3b8; font-size: 12px; margin: 0;">© 2024 Duy Tan University. All rights
+                        reserved.</p>
+                </div>
+
+                <div class="footer-links" style="display: flex; gap: 32px;">
+                    <a href="#" style="color: #64748b; font-size: 12px; text-decoration: none;">Quy định bảo mật</a>
+                    <a href="#" style="color: #64748b; font-size: 12px; text-decoration: none;">Điều khoản sử dụng</a>
+                    <a href="#" style="color: #64748b; font-size: 12px; text-decoration: none;">Liên hệ hỗ trợ</a>
+                </div>
+            </div>
+        </footer>
+
+        <!-- AI CHAT WIDGET -->
+        <div class="ai-chat-widget">
+            <div class="chat-toggle-btn" id="aiChatToggle">
+                <span class="material-symbols-outlined">smart_toy</span>
+            </div>
+
+            <div class="chat-window" id="aiChatWindow">
+                <div class="chat-header">
+                    <h4>DTU AI Assistant</h4>
+                    <span class="material-symbols-outlined close-chat-btn" id="aiChatClose">close</span>
+                </div>
+                <div class="chat-body" id="aiChatBody">
+                    <div class="chat-bubble ai">
+                        Xin chào! Tôi là Trợ lý ảo của DTU Supports. Tôi có thể giúp gì cho bạn hôm nay?
+                    </div>
+                </div>
+                <div class="chat-footer">
+                    <input type="text" class="chat-input" placeholder="Nhập câu hỏi..." id="aiChatInput">
+                    <button class="send-chat-btn" id="aiChatSend">
+                        <span class="material-symbols-outlined">send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function () {
+            var btn = document.getElementById('userProfileBtn');
+            var menu = document.getElementById('userDropdown');
+            if (!btn || !menu) return;
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                menu.classList.toggle('open');
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!btn.contains(e.target)) {
+                    menu.classList.remove('open');
+                }
+            });
+
+            // AI Chat Logic
+            const chatToggle = document.getElementById('aiChatToggle');
+            const chatWindow = document.getElementById('aiChatWindow');
+            const chatClose = document.getElementById('aiChatClose');
+            const chatInput = document.getElementById('aiChatInput');
+            const chatSend = document.getElementById('aiChatSend');
+            const chatBody = document.getElementById('aiChatBody');
+
+            let isHistoryLoaded = false;
+
+            chatToggle.addEventListener('click', () => {
+                chatWindow.classList.toggle('open');
+                if (chatWindow.classList.contains('open')) {
+                    chatInput.focus();
+                    if (!isHistoryLoaded) {
+                        loadChatHistory();
+                    }
+                }
+            });
+
+            chatClose.addEventListener('click', () => {
+                chatWindow.classList.remove('open');
+            });
+
+            function addMessage(sender, text, isHistory = false) {
+                const bubble = document.createElement('div');
+                bubble.className = `chat-bubble ${sender}`;
+                bubble.textContent = text;
+                chatBody.appendChild(bubble);
+                
+                if (!isHistory) {
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }
+                return bubble;
+            }
+
+            async function loadChatHistory() {
+                try {
+                    const response = await fetch('/api/chat/history');
+                    const history = await response.json();
+                    
+                    history.forEach(msg => {
+                        addMessage(msg.role, msg.text, true);
+                    });
+                    
+                    isHistoryLoaded = true;
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                } catch (error) {
+                    console.error('Lỗi tải lịch sử chat:', error);
+                }
+            }
+
+            async function handleChat() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+
+                addMessage('user', message);
+                chatInput.value = '';
+
+                const loadingBubble = addMessage('ai', '...');
+                loadingBubble.classList.add('typing-indicator');
+                loadingBubble.textContent = 'DTU AI đang suy nghĩ...';
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: message })
+                    });
+                    const data = await response.json();
+                    
+                    loadingBubble.remove();
+                    addMessage('ai', data.reply);
+                } catch (error) {
+                    loadingBubble.remove();
+                    addMessage('ai', 'Xin lỗi, tôi đang gặp sự cố kết nối. Hãy thử lại sau!');
+                }
+            }
+
+            chatSend.addEventListener('click', handleChat);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleChat();
+            });
+        })();
+    </script>
+
+</body>
+
+</html>

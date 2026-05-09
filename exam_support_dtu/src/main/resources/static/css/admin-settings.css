@@ -1,0 +1,260 @@
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-title i {
+    font-size: 32px;
+}
+
+.header-title h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #1e293b;
+}
+
+.header-title p {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.settings-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.settings-card:hover {
+    transform: translateY(-2px);
+}
+
+.settings-card.full-width {
+    grid-column: span 2;
+}
+
+.card-header {
+    padding: 18px 24px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.card-header i {
+    color: #ef4444;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.setting-item:first-child {
+    padding-top: 0;
+}
+
+.setting-info label {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+    font-size: 15px;
+}
+
+.setting-info p {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.setting-control {
+    min-width: 120px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #ef4444;
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Number Input */
+.number-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.number-input input {
+    width: 60px;
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 15px;
+    text-align: center;
+}
+
+.number-input span {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.form-control-cron {
+    background: #f8fafc;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-family: monospace;
+    font-size: 14px;
+    color: #1e293b;
+    width: 150px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.form-control-cron:focus {
+    border-color: #ef4444;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.setting-item.disabled {
+    opacity: 0.7;
+}
+
+/* Status Grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+}
+
+.status-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.status-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.text-orange { color: #f97316 !important; }
+.text-green { color: #10b981 !important; }
+
+@media (max-width: 1024px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+    .settings-card.full-width {
+        grid-column: span 1;
+    }
+    .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

@@ -1,5 +1,6 @@
 package com.example.exam_support_dtu.service;
 
+import com.example.exam_support_dtu.annotation.LoggableAction;
 import com.example.exam_support_dtu.dto.DownloadFileDto;
 import com.example.exam_support_dtu.dto.ExamCrawlDto;
 import com.example.exam_support_dtu.dto.FilesCrawlDto;
@@ -31,11 +32,13 @@ public class ExamCrawlService {
     private final ExamOriginalService examOriginalService;
     private final FileStorageService fileStorageService;
     private final ExcelParserService excelParserService;
+    private final AuditLogService auditLogService;
 
-    public ExamCrawlService(ExamOriginalService examOriginalService, FileStorageService fileStorageService, ExcelParserService excelParserService) {
+    public ExamCrawlService(ExamOriginalService examOriginalService, FileStorageService fileStorageService, ExcelParserService excelParserService, AuditLogService auditLogService) {
         this.examOriginalService = examOriginalService;
         this.fileStorageService = fileStorageService;
         this.excelParserService = excelParserService;
+        this.auditLogService = auditLogService;
     }
 
     private static final String exam_list_url =
@@ -46,31 +49,55 @@ public class ExamCrawlService {
     // 1. CÁC HÀM ĐIỀU KHIỂN CHÍNH (QUÉT TRANG)
     // =========================================================================
 
+    @LoggableAction(action = "CRAWL_EXAM_DATA", targetType = "CRAWLER", details = "'Quét ' + #maxPages + ' trang. Kết quả: ' + #result")
     public String CrawlMultiplePages(int maxPages) {
+        return CrawlMultiplePagesWithCallback(maxPages, System.out::println);
+    }
+
+    public String CrawlMultiplePagesWithCallback(int maxPages, java.util.function.Consumer<String> logConsumer) {
         StringBuilder report = new StringBuilder();
+        int totalSuccess = 0;
+        int totalSkip = 0;
+        int totalError = 0;
 
         for (int i = 1; i <= maxPages; i++) {
             String currentUrl = exam_list_url + "&page=" + i;
 
-            System.out.println("==========================================");
-            System.out.println(">>> ĐANG QUÉT TRANG " + i + " / " + maxPages);
-            System.out.println(">>> URL: " + currentUrl);
-            System.out.println("==========================================");
+            logConsumer.accept("==========================================");
+            logConsumer.accept(">>> ĐANG QUÉT TRANG " + i + " / " + maxPages);
+            logConsumer.accept(">>> URL: " + currentUrl);
+            logConsumer.accept("==========================================");
 
-            String result = ProcessOnePage(currentUrl);
+            // stats[0] = success, stats[1] = skip, stats[2] = error
+            int[] stats = {0, 0, 0};
+            String result = ProcessOnePage(currentUrl, logConsumer, stats);
+
+            totalSuccess += stats[0];
+            totalSkip += stats[1];
+            totalError += stats[2];
+
             report.append("Trang ").append(i).append(": ").append(result).append("\n");
         }
+
+        String summary = String.format("HOÀN TẤT: Thành công %d | Bỏ qua %d | Lỗi %d", totalSuccess, totalSkip, totalError);
+        logConsumer.accept("==========================================");
+        logConsumer.accept(summary);
+        logConsumer.accept("==========================================");
+
+        // Lưu log tổng vào Audit Log
+        auditLogService.logCrawlerSuccess(totalSuccess, totalSkip + totalError);
 
         return report.toString();
     }
 
-    private String ProcessOnePage(String pageUrl) {
+    private String ProcessOnePage(String pageUrl, java.util.function.Consumer<String> logConsumer, int[] stats) {
         int success = 0, skip = 0, error = 0;
 
         // Sử dụng ExamCrawlDto
         List<ExamCrawlDto> exams = ExamCrawl(pageUrl);
 
         if (exams.isEmpty()) {
+            logConsumer.accept(">>> INFO: Không tìm thấy bài thi nào trên trang này.");
             return "Không tìm thấy bài thi nào (hoặc hết trang).";
         }
 
@@ -81,8 +108,8 @@ public class ExamCrawlService {
                     eo = examOriginalService.SavePending(exam);
                 }
 
-                if (eo.getStatus() == FileStatus.downloaded) {
-                    System.out.println(">>> SKIPPED (Already Downloaded): " + exam.getFileUrl());
+                if (eo.getStatus() == FileStatus.downloaded || eo.getStatus() == FileStatus.parsed) {
+                    logConsumer.accept(">>> SKIPPED (Already Processed): " + exam.getFileUrl());
                     skip++;
                     continue;
                 }
@@ -99,18 +126,23 @@ public class ExamCrawlService {
                             downloadUrl
                     );
 
-                    CrawlAndSave(exam, fileToSave);
+                    CrawlAndSaveWithLog(exam, fileToSave, logConsumer);
                     success++;
                 } else {
-                    System.out.println(">>> SKIP: Không có file đính kèm hợp lệ (.xls, .pdf) tại " + exam.getFileUrl());
+                    logConsumer.accept(">>> SKIP: Không có file đính kèm hợp lệ (.xls, .pdf) tại " + exam.getFileUrl());
                     examOriginalService.SaveError(eo.getId(), "Không tìm thấy file Excel/PDF đính kèm");
                     skip++;
                 }
             } catch (Exception e) {
-                System.out.println(">>> ERROR: " + exam.getFileUrl() + " - " + e.getMessage());
+                logConsumer.accept(">>> ERROR: " + exam.getFileUrl() + " - " + e.getMessage());
                 error++;
             }
         }
+
+        stats[0] = success;
+        stats[1] = skip;
+        stats[2] = error;
+
         return String.format("Success=%d | Skipped=%d | Error=%d", success, skip, error);
     }
 
@@ -118,11 +150,14 @@ public class ExamCrawlService {
     // 2. HÀM CORE: LOGIC NGHIỆP VỤ (LƯU DB & TẢI FILE)
     // =========================================================================
 
-    // Đã thay đổi tham số thành DTO
     public void CrawlAndSave(ExamCrawlDto examCrawl, FilesCrawlDto filesCrawl) {
+        CrawlAndSaveWithLog(examCrawl, filesCrawl, System.out::println);
+    }
+
+    public void CrawlAndSaveWithLog(ExamCrawlDto examCrawl, FilesCrawlDto filesCrawl, java.util.function.Consumer<String> logConsumer) {
         String source_name = filesCrawl.getSourceName();
 
-        System.out.println(">>> PROCESSING: " + examCrawl.getFileUrl());
+        logConsumer.accept(">>> PROCESSING: " + examCrawl.getFileUrl());
 
         switch (source_name) {
             case "DANH SÁCH THI":
@@ -130,8 +165,8 @@ public class ExamCrawlService {
 
                 if (eo == null) {
                     eo = examOriginalService.SavePending(examCrawl);
-                } else if (eo.getStatus() == FileStatus.downloaded) {
-                    System.out.println(">>> SKIPPED (Already Downloaded): " + eo.getFileOriginalName());
+                } else if (eo.getStatus() == FileStatus.downloaded || eo.getStatus() == FileStatus.parsed) {
+                    logConsumer.accept(">>> SKIPPED (Already Processed): " + eo.getFileOriginalName());
                     return;
                 }
 
@@ -160,9 +195,9 @@ public class ExamCrawlService {
                     if (isDuplicateFile) {
                         try {
                             Files.deleteIfExists(Paths.get(dl.getFilePath()));
-                            System.out.println(">>> DUPLICATE FILE DETECTED: Deleted temp file " + dl.getFilePath());
+                            logConsumer.accept(">>> DUPLICATE FILE DETECTED: Deleted temp file " + dl.getFilePath());
                         } catch (Exception ex) {
-                            System.out.println(">>> WARNING: Could not delete duplicate file: " + ex.getMessage());
+                            logConsumer.accept(">>> WARNING: Could not delete duplicate file: " + ex.getMessage());
                         }
                     }
 
@@ -171,17 +206,17 @@ public class ExamCrawlService {
                             savedFile.getId(),
                             typeEnum
                     );
-                    System.out.println(">>> SUCCESS: Saved Exam ID " + eo.getId() + " linked to File ID " + savedFile.getId());
+                    logConsumer.accept(">>> SUCCESS: Saved Exam ID " + eo.getId() + " linked to File ID " + savedFile.getId());
 
                     // ĐOẠN PARSE EXCEL GIỮ NGUYÊN...
                     if (typeEnum == FileType.xls || typeEnum == FileType.xlsx) {
                         if (isDuplicateFile) {
-                            System.out.println(">>> SKIP PARSING: File trùng lặp nội dung. Đã liên kết với file cũ thành công.");
+                            logConsumer.accept(">>> SKIP PARSING: File trùng lặp nội dung. Đã liên kết với file cũ thành công.");
                         } else {
-                            System.out.println(">>> START PARSING EXCEL...");
+                            logConsumer.accept(">>> START PARSING EXCEL...");
                             try (FileInputStream fis = new FileInputStream(savedFile.getFilePath())) {
                                 String parseResult = excelParserService.parseAndSave(fis, doneExam, savedFile);
-                                System.out.println(">>> PARSE RESULT: " + parseResult);
+                                logConsumer.accept(">>> PARSE RESULT: " + parseResult);
 
                                 if (parseResult.startsWith("Thành công")) {
                                     examOriginalService.UpdateStatusToParsed(doneExam.getId());
@@ -189,25 +224,25 @@ public class ExamCrawlService {
                                     examOriginalService.SaveError(doneExam.getId(), parseResult);
                                 }
                             } catch (Exception ex) {
-                                System.out.println(">>> ERROR PARSING: " + ex.getMessage());
+                                logConsumer.accept(">>> ERROR PARSING: " + ex.getMessage());
                                 examOriginalService.SaveError(doneExam.getId(), "Lỗi Exception khi Parse: " + ex.getMessage());
                                 ex.printStackTrace();
                             }
                         }
                     } else {
-                        System.out.println(">>> SKIP PARSING: File type is " + typeEnum);
+                        logConsumer.accept(">>> SKIP PARSING: File type is " + typeEnum);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                     examOriginalService.SaveError(eo.getId(), e.getMessage());
-                    System.out.println(">>> ERROR SAVED: " + e.getMessage());
+                    logConsumer.accept(">>> ERROR SAVED: " + e.getMessage());
                 }
                 break;
 
             case "THÔNG BÁO":
                 break;
             default:
-                System.out.println(">>> UNKNOWN SOURCE: " + source_name);
+                logConsumer.accept(">>> UNKNOWN SOURCE: " + source_name);
                 break;
         }
     }
@@ -263,7 +298,7 @@ public class ExamCrawlService {
 
     // Trả về DownloadFileDto
     public DownloadFileDto DownloadFile(FilesCrawlDto filecrawl) {
-        String baseSaveDir = FileStorageService.UPLOAD_DIR;
+        String baseSaveDir = fileStorageService.getUploadDir();
         try {
             URL rawUrl = new URL(filecrawl.getDownloadUrl());
             String encodedPath = encodePath(rawUrl.getPath());

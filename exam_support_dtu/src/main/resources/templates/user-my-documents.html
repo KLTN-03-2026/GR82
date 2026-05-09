@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html th:replace="~{user-layout :: user_layout(~{::#my-docs-content}, '/css/user/user-my-documents.css', 'my-documents')}"
+      xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="my-docs-content">
+
+    <main class="my-docs-main">
+
+        <!-- Page Header -->
+        <div class="page-header-row">
+            <div>
+                <h1 class="page-title">Tài Liệu Của Tôi</h1>
+                <p class="page-subtitle">Tài liệu bạn đã đóng góp cho cộng đồng DTU Supports</p>
+            </div>
+            <button class="btn-upload-trigger" id="btnShowUpload">
+                <span class="material-symbols-outlined">upload_file</span>
+                Tải lên tài liệu
+            </button>
+        </div>
+
+        <!-- Upload Panel (ẩn mặc định) -->
+        <div class="upload-panel" id="uploadPanel" style="display: none;">
+            <div class="upload-panel-header">
+                <h3><span class="material-symbols-outlined">upload_file</span> Tải lên tài liệu mới</h3>
+                <button class="upload-close-btn" id="btnCloseUpload" type="button">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="uploadForm" class="upload-form">
+                <div class="upload-form-row">
+                    <div class="upload-field">
+                        <label>Tiêu đề tài liệu</label>
+                        <input type="text" id="docTitle" class="upload-input"
+                               placeholder="Ví dụ: Đề thi giữa kỳ CS311 - 2024">
+                    </div>
+                    <div class="upload-field">
+                        <label>Mã môn học (tùy chọn)</label>
+                        <input type="text" id="docCourseCode" class="upload-input"
+                               placeholder="Ví dụ: CS311">
+                    </div>
+                </div>
+
+                <div class="upload-drop-zone" id="dropZone">
+                    <span class="material-symbols-outlined upload-drop-icon">cloud_upload</span>
+                    <p class="upload-drop-text">Kéo thả file vào đây hoặc</p>
+                    <label class="upload-drop-browse">
+                        <span>Chọn file từ máy tính</span>
+                        <input type="file" id="docFile"
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
+                               style="display:none;">
+                    </label>
+                    <p class="upload-drop-hint">Hỗ trợ: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP — Tối đa 50MB</p>
+                    <div id="selectedFileName" class="upload-selected-file" style="display:none;"></div>
+                </div>
+
+                <div class="upload-actions">
+                    <button type="button" class="btn-cancel" id="btnCancelUpload">Hủy</button>
+                    <button type="submit" class="btn-submit" id="btnSubmitUpload">
+                        <span class="material-symbols-outlined">upload</span>
+                        Tải lên
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Status info -->
+        <div class="status-legend">
+            <span class="status-dot pending"></span> Chờ duyệt &nbsp;&nbsp;
+            <span class="status-dot approved"></span> Đã duyệt &nbsp;&nbsp;
+            <span class="status-dot rejected"></span> Bị từ chối
+        </div>
+
+        <!-- Document List -->
+        <div class="docs-list" th:if="${myDocs != null and !myDocs.isEmpty()}">
+            <div class="doc-card" th:each="doc : ${myDocs}">
+                <div class="doc-type-icon"
+                     th:classappend="${doc.fileType == 'PDF'} ? 'type-pdf' : 'type-other'">
+                    <span class="material-symbols-outlined"
+                          th:text="${doc.fileType == 'PDF'} ? 'picture_as_pdf' : 'description'">description</span>
+                </div>
+
+                <div class="doc-info">
+                    <div class="doc-title-row">
+                        <h3 class="doc-title" th:text="${doc.title}">Tên tài liệu</h3>
+                        <span class="doc-status"
+                              th:classappend="${doc.status == 'APPROVED'} ? 'approved' : (${doc.status == 'REJECTED'} ? 'rejected' : 'pending')"
+                              th:text="${doc.status == 'APPROVED'} ? 'Đã duyệt' : (${doc.status == 'REJECTED'} ? 'Bị từ chối' : 'Chờ duyệt')">
+                            Chờ duyệt
+                        </span>
+                    </div>
+                    <div class="doc-meta">
+                        <span th:if="${doc.courseCode != null and !doc.courseCode.isEmpty()}">
+                            <span class="material-symbols-outlined">menu_book</span>
+                            <span th:text="${doc.courseCode}">CS311</span>
+                        </span>
+                        <span>
+                            <span class="material-symbols-outlined">event</span>
+                            <span th:text="${doc.createdAt != null ? #temporals.format(doc.createdAt, 'dd/MM/yyyy') : ''}"></span>
+                        </span>
+                        <span>
+                            <span class="material-symbols-outlined">visibility</span>
+                            <span th:text="${doc.views}">0</span> lượt xem
+                        </span>
+                        <span>
+                            <span class="material-symbols-outlined">download</span>
+                            <span th:text="${doc.downloads}">0</span> lượt tải
+                        </span>
+                    </div>
+                </div>
+
+                <div class="doc-actions">
+                    <a class="doc-btn doc-btn-view"
+                       th:href="@{/api/user/my-documents/view/{id}(id=${doc.id})}"
+                       target="_blank" title="Xem file">
+                        <span class="material-symbols-outlined">open_in_new</span>
+                    </a>
+                    <button class="doc-btn doc-btn-delete"
+                            th:data-id="${doc.id}"
+                            th:disabled="${doc.status == 'APPROVED'}"
+                            onclick="deleteDoc(this)"
+                            title="Xóa tài liệu">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" th:if="${myDocs == null or myDocs.isEmpty()}">
+            <span class="material-symbols-outlined empty-icon">folder_open</span>
+            <h3>Chưa có tài liệu nào</h3>
+            <p>Bạn chưa tải lên tài liệu nào. Hãy đóng góp tài liệu để giúp cộng đồng sinh viên DTU!</p>
+            <button class="btn-upload-trigger" onclick="document.getElementById('btnShowUpload').click()">
+                <span class="material-symbols-outlined">upload_file</span>
+                Tải lên ngay
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // Toggle upload panel
+        const uploadPanel = document.getElementById('uploadPanel');
+        document.getElementById('btnShowUpload').addEventListener('click', () => {
+            uploadPanel.style.display = 'block';
+            uploadPanel.scrollIntoView({ behavior: 'smooth' });
+        });
+        document.getElementById('btnCloseUpload').addEventListener('click', () => uploadPanel.style.display = 'none');
+        document.getElementById('btnCancelUpload').addEventListener('click', () => uploadPanel.style.display = 'none');
+
+        // Show selected file name
+        const fileInput = document.getElementById('docFile');
+        const selectedName = document.getElementById('selectedFileName');
+        fileInput.addEventListener('change', function() {
+            if (this.files[0]) {
+                selectedName.textContent = '✓ ' + this.files[0].name;
+                selectedName.style.display = 'block';
+            }
+        });
+
+        // Drag & Drop
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                selectedName.textContent = '✓ ' + e.dataTransfer.files[0].name;
+                selectedName.style.display = 'block';
+            }
+        });
+
+        // Upload form submit
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const file = fileInput.files[0];
+            if (!file) { alert('Vui lòng chọn file để tải lên!'); return; }
+
+            const btn = document.getElementById('btnSubmitUpload');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;animation:spin 1s linear infinite">refresh</span> Đang tải...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', document.getElementById('docTitle').value);
+            formData.append('courseCode', document.getElementById('docCourseCode').value);
+
+            fetch('/api/user/documents/upload', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => { alert(data.message); window.location.reload(); })
+            .catch(err => { alert('Lỗi: ' + err.message); btn.innerHTML = orig; btn.disabled = false; });
+        });
+
+        // Delete document
+        function deleteDoc(btn) {
+            if (btn.disabled) { alert('Không thể xóa tài liệu đã được phê duyệt!'); return; }
+            const id = btn.getAttribute('data-id');
+            if (!confirm('Bạn có chắc muốn xóa tài liệu này không?')) return;
+            btn.disabled = true;
+            fetch('/api/user/my-documents/' + id, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => { alert(data.message); btn.closest('.doc-card').remove(); })
+            .catch(err => { alert(err.message); btn.disabled = false; });
+        }
+    </script>
+
+</div>
+</body>
+</html>

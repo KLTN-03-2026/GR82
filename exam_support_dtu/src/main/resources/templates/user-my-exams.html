@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html th:replace="~{user-layout :: user_layout(~{::#my-exams-content}, '/css/user/user-my-exams.css', 'my-exams')}"
+      xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="my-exams-content">
+
+    <main class="my-exams-main">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Lịch Thi Cá Nhân</h1>
+                <p class="page-subtitle">Quản lý lịch thi của bạn và các môn học đang theo dõi</p>
+            </div>
+            <div class="header-actions" th:if="${activeTab == 'my' and !needStudentCode}">
+                <button class="btn-refresh" onclick="location.reload()">
+                    <span class="material-symbols-outlined">sync</span>
+                    Làm mới dữ liệu
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <a class="tab-btn" th:classappend="${activeTab == 'my'} ? 'active' : ''"
+               th:href="@{/user/my-exams(tab='my')}">
+                <span class="material-symbols-outlined">event_available</span>
+                Lịch Thi Của Tôi
+            </a>
+            <a class="tab-btn" th:classappend="${activeTab == 'followed'} ? 'active' : ''"
+               th:href="@{/user/my-exams(tab='followed')}">
+                <span class="material-symbols-outlined">bookmark</span>
+                Lịch Thi Quan Tâm
+            </a>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 1: LỊCH THI CỦA TÔI                    -->
+        <!-- ============================================ -->
+        <div th:if="${activeTab == 'my'}">
+
+            <!-- Cảnh báo chưa có MSSV -->
+            <div class="alert-card" th:if="${needStudentCode}">
+                <span class="material-symbols-outlined alert-icon">person_alert</span>
+                <div class="alert-body">
+                    <h3>Chưa có Mã Sinh Viên (MSSV)</h3>
+                    <p>Bạn cần bổ sung MSSV trong Hồ Sơ Cá Nhân để hệ thống tự động tìm và hiển thị lịch thi của bạn.</p>
+                    <a th:href="@{/user/profile}" class="alert-btn">
+                        <span class="material-symbols-outlined">edit</span>
+                        Cập Nhật Hồ Sơ Ngay
+                    </a>
+                </div>
+            </div>
+
+            <!-- Có MSSV -->
+            <div th:if="${!needStudentCode}">
+                <!-- Info bar -->
+                <div class="result-info" th:if="${myExams != null}">
+                    <span class="material-symbols-outlined">info</span>
+                    Đang hiển thị lịch thi cho MSSV: <strong th:text="${studentCode}"></strong>
+                    &nbsp;—&nbsp;
+                    <span th:text="${myExams.size()}">0</span> môn thi
+                </div>
+
+                <!-- Danh sách -->
+                <div class="exam-grid" th:if="${myExams != null and !myExams.isEmpty()}">
+                    <div class="exam-card" th:each="interest : ${myExams}">
+                        <div class="exam-card-badge">
+                            <span class="material-symbols-outlined">event</span>
+                        </div>
+                        
+                        <!-- Hiển thị SBD nếu có -->
+                        <div class="seat-badge" th:if="${interest.examStudent != null}">
+                            SBD: <span th:text="${interest.examStudent.seatNumber}">--</span>
+                        </div>
+
+                        <div class="exam-card-body">
+                            <div class="exam-meta">
+                                <span class="course-code" th:text="${interest.examSchedule?.courseCode ?: 'N/A'}">CS301</span>
+                                <span class="semester-badge" th:text="${interest.examSchedule?.semester ?: ''}">Spring 2024</span>
+                            </div>
+                            <h3 class="course-name" th:text="${interest.examSchedule?.courseName ?: 'Chưa cập nhật'}">Tên môn học</h3>
+
+                            <div class="exam-details">
+                                <div class="detail-item">
+                                    <span class="material-symbols-outlined">meeting_room</span>
+                                    <span th:text="${interest.examRoom?.roomName ?: 'Chưa cập nhật'}">Phòng 101</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="material-symbols-outlined">location_on</span>
+                                    <span th:text="${interest.examRoom?.location ?: 'Cơ sở A'}">Cơ sở A</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="material-symbols-outlined">calendar_today</span>
+                                    <span th:text="${interest.examRoom?.examDate != null ? #temporals.format(interest.examRoom.examDate, 'dd/MM/yyyy') : 'Chưa cập nhật'}">01/01/2024</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="material-symbols-outlined">schedule</span>
+                                    <span th:text="${interest.examRoom?.examTime ?: 'Chưa cập nhật'}">07:00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="exam-card-footer">
+                            <div class="notify-settings">
+                                <span class="material-symbols-outlined">notifications</span>
+                                <select th:onchange="'updateNotifyDays(' + ${interest.id} + ', this.value)'">
+                                    <option value="" th:selected="${interest.studentNotifyDays == null}" 
+                                            th:text="'Mặc định (' + ${systemDefaultDays} + ' ngày)'">Mặc định</option>
+                                    <option value="1" th:selected="${interest.studentNotifyDays == 1}">Nhắc trước 1 ngày</option>
+                                    <option value="2" th:selected="${interest.studentNotifyDays == 2}">Nhắc trước 2 ngày</option>
+                                    <option value="3" th:selected="${interest.studentNotifyDays == 3}">Nhắc trước 3 ngày</option>
+                                    <option value="5" th:selected="${interest.studentNotifyDays == 5}">Nhắc trước 5 ngày</option>
+                                </select>
+                            </div>
+                            <button class="btn-unfollow"
+                                    th:data-id="${interest.id}"
+                                    onclick="unfollowExam(this)"
+                                    title="Hủy theo dõi">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Không có dữ liệu -->
+                <div class="empty-state" th:if="${myExams == null or myExams.isEmpty()}">
+                    <span class="material-symbols-outlined empty-icon">search_off</span>
+                    <h3>Không tìm thấy lịch thi</h3>
+                    <p>Hệ thống không tìm thấy lịch thi nào khớp với MSSV <strong th:text="${studentCode}"></strong>.</p>
+                    <p>Lịch thi có thể chưa được nhập vào hệ thống, hoặc MSSV của bạn chưa chính xác.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 2: LỊCH THI QUAN TÂM                   -->
+        <!-- ============================================ -->
+        <div th:if="${activeTab == 'followed'}">
+
+            <div class="result-info" th:if="${followedExams != null}">
+                <span class="material-symbols-outlined">info</span>
+                <span th:text="${followedExams.size()}">0</span> lịch thi đang theo dõi
+            </div>
+
+            <div class="exam-grid" th:if="${followedExams != null and !followedExams.isEmpty()}">
+                <div class="exam-card followed" th:each="interest : ${followedExams}">
+                    <div class="exam-card-badge followed-badge">
+                        <span class="material-symbols-outlined">bookmark</span>
+                    </div>
+
+                    <div class="exam-card-body">
+                        <div class="exam-meta">
+                            <span class="course-code" th:text="${interest.examSchedule?.courseCode ?: (interest.examOriginal != null ? 'PDF' : 'N/A')}">CS301</span>
+                            <span class="followed-tag" th:text="${interest.examOriginal != null ? 'Tệp PDF' : 'Theo dõi thủ công'}">Theo dõi thủ công</span>
+                        </div>
+                        <h3 class="course-name" th:text="${interest.examSchedule?.courseName ?: (interest.examOriginal != null ? interest.examOriginal.fileOriginalName : 'Chưa cập nhật')}">Tên môn học</h3>
+
+                        <div class="exam-details">
+                            <div class="detail-item">
+                                <span class="material-symbols-outlined">school</span>
+                                <span th:text="${interest.examSchedule?.semester ?: 'Chưa cập nhật'}">Spring 2024</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="material-symbols-outlined">groups</span>
+                                <span>
+                                    <span th:text="${interest.examSchedule?.totalStudents ?: '?'}">0</span> sinh viên
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="warning-note" th:if="${interest.examRoom == null}">
+                            <span class="material-symbols-outlined">warning</span>
+                            Lịch chi tiết chưa được trích xuất. Vui lòng xem file PDF gốc.
+                        </div>
+                    </div>
+
+                    <div class="exam-card-footer">
+                        <div class="notify-settings">
+                            <span class="material-symbols-outlined">notifications</span>
+                            <select th:onchange="'updateNotifyDays(' + ${interest.id} + ', this.value)'">
+                                <option value="" th:selected="${interest.studentNotifyDays == null}" 
+                                        th:text="'Mặc định (' + ${systemDefaultDays} + ' ngày)'">Mặc định</option>
+                                <option value="1" th:selected="${interest.studentNotifyDays == 1}">1 ngày</option>
+                                <option value="2" th:selected="${interest.studentNotifyDays == 2}">2 ngày</option>
+                                <option value="3" th:selected="${interest.studentNotifyDays == 3}">3 ngày</option>
+                                <option value="5" th:selected="${interest.studentNotifyDays == 5}">5 ngày</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <!-- Xem chi tiết (Modal) -->
+                            <button th:if="${interest.examSchedule != null}" 
+                                    class="btn-unfollow" 
+                                    th:onclick="'showScheduleDetail(' + ${interest.examSchedule.id} + ')'"
+                                    title="Xem chi tiết" style="color: #2563eb;">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+
+                            <!-- Xem chi tiết PDF (Modal) -->
+                            <button th:if="${interest.examSchedule == null and interest.examOriginal != null}" 
+                                    class="btn-unfollow" 
+                                    th:data-id="${interest.examOriginal.savedFileId}"
+                                    th:data-name="${interest.examOriginal.fileOriginalName}"
+                                    onclick="openPdfPreviewFromBtn(this)"
+                                    title="Xem chi tiết PDF" style="color: #ef4444;">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+
+                            <a th:if="${interest.examOriginal != null and interest.examOriginal.savedFileId != null}"
+                               th:href="@{/api/files/download/{id}(id=${interest.examOriginal.savedFileId})}"
+                               target="_blank" class="btn-unfollow" title="Tải PDF" style="color: #64748b;">
+                                <span class="material-symbols-outlined">download</span>
+                            </a>
+                            <button class="btn-unfollow"
+                                    th:data-id="${interest.id}"
+                                    onclick="unfollowExam(this)"
+                                    title="Hủy theo dõi">
+                                <span class="material-symbols-outlined">bookmark_remove</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Không có dữ liệu -->
+            <div class="empty-state" th:if="${followedExams == null or followedExams.isEmpty()}">
+                <span class="material-symbols-outlined empty-icon">bookmark_border</span>
+                <h3>Chưa có lịch thi nào</h3>
+                <p>Bạn chưa theo dõi lịch thi nào. Vào trang <a th:href="@{/user/schedules}">Lịch Thi</a> để tìm và bấm nút <strong>"Quan tâm"</strong> trên các môn học.</p>
+            </div>
+        </div>
+
+    <!-- Modal fragments -->
+    <div th:replace="~{fragments/exam-modals :: pdf_preview_modal}"></div>
+    <div th:replace="~{fragments/exam-modals :: schedule_detail_modal}"></div>
+
+    </main>
+
+
+    <script>
+        function unfollowExam(btn) {
+            const id = btn.getAttribute('data-id');
+            if (!confirm('Bạn có chắc muốn hủy theo dõi lịch thi này không?')) return;
+
+            btn.disabled = true;
+
+            fetch('/api/user/interests/' + id, { method: 'DELETE' })
+                .then(res => {
+                    if (!res.ok) throw new Error('Thao tác thất bại!');
+                    return res.json();
+                })
+                .then(data => {
+                    // Xóa card khỏi DOM
+                    const card = btn.closest('.exam-card');
+                    if (card) card.remove();
+                    
+                    // Reload nếu hết card để hiện empty state
+                    const grid = document.querySelector('.exam-grid');
+                    if (grid && grid.children.length === 0) location.reload();
+                })
+                .catch(err => {
+                    alert(err.message);
+                    btn.disabled = false;
+                });
+        }
+
+        function updateNotifyDays(id, days) {
+            const val = days === "" ? null : parseInt(days);
+            fetch(`/api/user/interests/${id}/settings`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notifyBeforeDays: val })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Cập nhật thất bại!');
+                console.log('Đã cập nhật cài đặt thông báo');
+            })
+            .catch(err => alert(err.message));
+        }
+    </script>
+
+</div>
+</body>
+</html>

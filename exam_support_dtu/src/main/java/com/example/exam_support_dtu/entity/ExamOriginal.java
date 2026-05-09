@@ -40,5 +40,7 @@ public class ExamOriginal {
     private String note;
 
     private String downloadUrl;
-
+    
+    @OneToMany(mappedBy = "examOriginal", cascade = CascadeType.ALL)
+    private java.util.List<ExamSchedule> schedules = new java.util.ArrayList<>();
 }
